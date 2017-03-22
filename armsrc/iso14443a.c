@@ -941,10 +941,10 @@ void SimulateIso14443aTag(int tagType, int flags, byte_t* data) {
 		response2[2] = data[1];
 		response2[3] = data[2];
 
-		response2a[0] = data[3];
-		response2a[1] = data[4];
-		response2a[2] = data[5];
-		response2a[3] = data[6]; //??
+		response2a[0] = data[4];
+		response2a[1] = data[5];
+		response2a[2] = data[6];
+		response2a[3] = data[7];
 		response2a[4] = response2a[0] ^ response2a[1] ^ response2a[2] ^ response2a[3];
 
 		// Configure the ATQA and SAK accordingly
