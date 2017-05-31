@@ -8,6 +8,9 @@ sudo: required
 #install:
 compiler: gcc
 
+services:
+  - docker
+
 # multi platform build test
 # build matrix,  
 # LINUX : Using trusty beta build environment,  based on Ubuntu 14.04
@@ -19,9 +22,9 @@ matrix:
   allow_failures:
     - os: osx
 
-#before_install:
-  
-  
+before_install:
+  - docker build -t $DOCKER_USERNAME/proxmark3 .
+
 ## Install mainline ARM toolchain.  gcc-arm-none-eabi is available
 ## in Ubuntu >= 14.04, but this external PPA is needed for 12.04.
 before_script:
@@ -34,5 +37,11 @@ before_script:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew tap iceman1001/proxmark3; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install proxmark3; fi
 
-  #make command
+after_success:
+  # source: https://docs.travis-ci.com/user/docker/#Pushing-a-Docker-Image-to-a-Registry
+  - if [ "$TRAVIS_BRANCH" == "master" ]; then
+      docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+      docker push $DOCKER_USERNAME/proxmark3;
+    fi
+
 script: "make all"
