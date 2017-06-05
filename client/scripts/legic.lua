@@ -217,8 +217,8 @@ end
 local currency = {
   ["03d2"]="EUR",
   ["0348"]="USD",
-  ["033A"]="GBP",
-  ["02F4"]="CHF"
+  ["033a"]="GBP",
+  ["02f4"]="CHF"
 }
 
 ---
@@ -516,7 +516,7 @@ end
 -- write virtual Tag to real Tag
 function writeToTag(tag)
   local bytes
-  local filename='MylegicClone.hex'
+  local filename='legicBuffer'
   local taglen=22
 	if(utils.confirm(acred.."\nplace the (empty) Tag onto the PM3\nand confirm writing to this Tag: "..acoff) == false) then
     return
@@ -568,25 +568,9 @@ function writeToTag(tag)
 		WriteBytes = utils.input(acyellow.."enter number of bytes to write?"..acoff, taglen)
 		-- load file into pm3-buffer
     if (type(filename)~="string") then filename=input(acyellow.."filename to load to pm3-buffer?"..acoff,"legic.temp") end
-		cmd = 'hf legic load '..filename
+		cmd = 'hf legic restore i '..filename
 		core.console(cmd)
 		-- write pm3-buffer to Tag
-		for i=0, WriteBytes do
-			if ( i<5 or i>6) then
-				cmd = ('hf legic write 0x%02x 0x01'):format(i)
-				core.console(cmd)
-        --print(cmd)
-			elseif (i == 6) then
-				-- write DCF in reverse order (requires 'mosci-patch')
-				cmd = 'hf legic write 0x05 0x02'
-        print(acgreen..cmd..acoff)
-				core.console(cmd)
-        --print(cmd)
-			else
-				print(acgreen.."skip byte 0x05 - will be written next step"..acoff)
-			end
-			utils.Sleep(0.2)
-		end
 	end
 end
 
@@ -619,32 +603,22 @@ end
 ---
 -- write bytes to file
 function writeFile(bytes, filename)
-  if (filename~='MylegicClone.hex') then
+  filename = filename..".bin"
+  if (filename~='legicBuffer.bin') then
     if (file_check(filename)) then
-	    local answer = confirm("\nthe output-file "..filename.." alredy exists!\nthis will delete the previous content!\ncontinue?")
+	    local answer = confirm("\nthe output-file "..filename.." already exists!\nthis will delete the previous content!\ncontinue?")
       if (answer==false) then return print("user abort") end
     end
   end
   local line
-	local bcnt=0
 	local fho,err = io.open(filename, "w")
 	if err then oops("OOps ... faild to open output-file ".. filename) end
   bytes=xorBytes(bytes, bytes[5])
+  line = ""
 	for i = 1, #bytes do
-		if (bcnt == 0) then
-			line=bytes[i]
-		elseif (bcnt <= 7) then
-			line=line.." "..bytes[i]
-		end
-		if (bcnt == 7) then
-			-- write line to new file
-			fho:write(line.."\n")
-			-- reset counter & line
-			bcnt=-1
-			line=""
-		end
-		bcnt=bcnt+1
+			line=line..""..string.char(tonumber(bytes[i],16))
 	end
+  fho:write(line)
 	fho:close()
 	print("\nwrote ".. #bytes .." bytes to " .. filename)
 	return true
@@ -1974,14 +1948,17 @@ function check4LegicCash(data)
   if(#data==32) then
     local stamp_len=(#data-25)
     local stamp=""
+    local debugCash = false
     for i=0, stamp_len-1 do
       stamp=stamp..data[i].." "
     end
     if (data[7]=="01") then
-      if (("%04x"):format(utils.Crc16(dumpTable(data, "", 0, 12))) == data[13]..data[14]) then
-        if (("%04x"):format(utils.Crc16(dumpTable(data, "", 15, 20))) == data[21]..data[22]) then
-          if (("%04x"):format(utils.Crc16(dumpTable(data, "", 23, 29))) == data[30]..data[31]) then
-            io.write(accyan.."Legic-Cash Segment detected "..acoff)
+      if (debugCash or ("%04x"):format(utils.Crc16(dumpTable(data, "", 0, 12))) ~= data[13]..data[14]) then
+        --if(debugCash) then  io.write("[1]"..dumpTable(data, "", 0, 12).." ==> "..("%04x"):format(utils.Crc16(dumpTable(data, "", 0, 12))) .."!=".. data[13]..data[14].."\n") end
+        if (debugCash  or ("%04x"):format(utils.Crc16(dumpTable(data, "", 15, 20))) ~= data[21]..data[22]) then
+          --if(debugCash) then io.write("[2]"..("%04x"):format(utils.Crc16(dumpTable(data, "", 15, 20))) .."~=".. data[21]..data[22].."\n") end
+          if (debugCash  or ("%04x"):format(utils.Crc16(dumpTable(data, "", 23, 29))) ~= data[30]..data[31]) then
+            -- io.write(accyan.."Legic-Cash Segment detected "..acoff)
             return true
           end
         end
@@ -2001,7 +1978,7 @@ function check43rdPartyCash1(uid, data)
         --if (compareCrc(utils.Crc8Legic(uid..data[35]..data[36]), data[37])=="valid") then
          --if (compareCrc(utils.Crc8Legic(uid..dumpTable(data, "", 56, 61)), data[62])=="valid") then
             --if (compareCrc(utils.Crc8Legic(uid..dumpTable(data, "", 74, 88)), data[89])=="valid") then
-              io.write(accyan.."3rd Party Cash-Segment detected "..acoff)
+              --io.write(accyan.."3rd Party Cash-Segment detected "..acoff)
               return true
               --end
           --end
@@ -2179,6 +2156,7 @@ function checkKghCrc(tag, segid)
   if (type(tag.SEG[segid])=='table') then
     if (tag.data[3]=="11" and tag.raw=="9f" and tag.SSC=="ff") then
       local data=kghCrcCredentials(tag, segid)
+      print("CRC:"..data.."  --  "..("%02x"):format(utils.Crc8Legic(data)).." == "..tag.SEG[segid].data[tag.SEG[segid].len-5-1])
       if (("%02x"):format(utils.Crc8Legic(data))==tag.SEG[segid].data[tag.SEG[segid].len-5-1]) then return true; end
       else return false; end
   else oops(acred.."'Kaba Group header' detected but no Segment-Data found"..ansocolors.reset) end
@@ -2310,9 +2288,9 @@ function modifyMode()
                   if(istable(inTAG.SEG[0])) then
                     for i=0, #inTAG.SEG do
                       if(check43rdPartyCash1(uid, inTAG.SEG[i].data)) then
-                        io.write(accyan.."in Segment index: "..inTAG.SEG[i].index ..acoff.. "\n")
+                        io.write(accyan.."in Segment index : (3rd Party Cash)"..inTAG.SEG[i].index ..acoff.. "\n")
                       elseif(check4LegicCash(inTAG.SEG[i].data)) then
-                        io.write(accyan.."in Segment index: "..inTAG.SEG[i].index..acoff.."\n")
+                        io.write(accyan.."in Segment index: (Legic Cash)"..inTAG.SEG[i].index..acoff.."\n")
                         lc=true;
                         lci=inTAG.SEG[i].index;
                       end
