@@ -507,7 +507,7 @@ function readFromPM3()
   local tag, bytes, infile
     infile="legic.temp"
     core.console("hf legic reader")
-    core.console("hf legic esave "..infile)
+    core.console("hf legic dump o "..infile)
     tag=readFile(infile..".bin")
     return tag
 end
@@ -1953,11 +1953,11 @@ function check4LegicCash(data)
       stamp=stamp..data[i].." "
     end
     if (data[7]=="01") then
-      if (debugCash or ("%04x"):format(utils.Crc16(dumpTable(data, "", 0, 12))) ~= data[13]..data[14]) then
+      if (debugCash or ("%04x"):format(utils.Crc16(dumpTable(data, "", 0, 12))) == data[13]..data[14]) then
         --if(debugCash) then  io.write("[1]"..dumpTable(data, "", 0, 12).." ==> "..("%04x"):format(utils.Crc16(dumpTable(data, "", 0, 12))) .."!=".. data[13]..data[14].."\n") end
-        if (debugCash  or ("%04x"):format(utils.Crc16(dumpTable(data, "", 15, 20))) ~= data[21]..data[22]) then
+        if (debugCash  or ("%04x"):format(utils.Crc16(dumpTable(data, "", 15, 20))) == data[21]..data[22]) then
           --if(debugCash) then io.write("[2]"..("%04x"):format(utils.Crc16(dumpTable(data, "", 15, 20))) .."~=".. data[21]..data[22].."\n") end
-          if (debugCash  or ("%04x"):format(utils.Crc16(dumpTable(data, "", 23, 29))) ~= data[30]..data[31]) then
+          if (debugCash  or ("%04x"):format(utils.Crc16(dumpTable(data, "", 23, 29))) == data[30]..data[31]) then
             -- io.write(accyan.."Legic-Cash Segment detected "..acoff)
             return true
           end
