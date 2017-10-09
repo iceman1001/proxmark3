@@ -42,19 +42,7 @@ endif
 endif
 
 # Check for correctly configured Qt5
-QTINCLUDES = $(shell pkg-config --cflags Qt5Core Qt5Widgets 2>/dev/null)
-QTLDLIBS = $(shell pkg-config --libs Qt5Core Qt5Widgets 2>/dev/null)
-MOC = $(shell pkg-config --variable=host_bins Qt5Core)/moc
-UIC = $(shell pkg-config --variable=host_bins Qt5Core)/uic
-ifeq ($(QTINCLUDES), )
-# if Qt5 not found check for correctly configured Qt4	
-	QTINCLUDES = $(shell pkg-config --cflags QtCore QtGui 2>/dev/null)
-	QTLDLIBS = $(shell pkg-config --libs QtCore QtGui 2>/dev/null)
-	MOC = $(shell pkg-config --variable=moc_location QtCore)
-	UIC = $(shell pkg-config --variable=uic_location QtCore)
-else
-	CXXFLAGS += -std=c++11 -fPIC
-endif
+
 ifeq ($(QTINCLUDES), )
 # if both pkg-config commands failed, search in common places
 	ifneq ($(QTDIR), )

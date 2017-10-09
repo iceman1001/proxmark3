@@ -26,6 +26,27 @@
  #include "LCD.h"
 #endif
 
+
+//debug prints seem to stall standalone mode after a while, if there is nothing to receive? i guess silly solution for that problem, if it is not in my head...;
+int doSendDPrint=1;
+
+//PRNG of some kind
+static uint32_t rx=16,ry=33,rz=311156,rc=80085;
+uint32_t rkiss()
+{
+    rx = (uint32_t)( 69069 * rx + 12345 );
+
+    ry ^= (ry << 13);
+    ry ^= (ry >> 17);
+    ry ^= (ry << 5);
+
+    uint64_t rt = 698769069 * rz + rc;
+    rc = (rt >> 32);
+    rz = (uint32_t)(rt);
+
+    return (uint32_t)(rx + ry + rz);
+}
+
 //=============================================================================
 // A buffer where we can queue things up to be sent through the FPGA, for
 // any purpose (fake tag, as reader, whatever). We go MSB first, since that
@@ -94,6 +115,7 @@ void print_result(char *name, uint8_t *buf, size_t len) {
 
 void DbpStringEx(char *str, uint32_t cmd) {
 	byte_t len = strlen(str);
+    if(doSendDPrint)
 	cmd_send(CMD_DEBUG_PRINT_STRING,len, cmd,0,(byte_t*)str,len);
 }
 
@@ -305,6 +327,9 @@ void SendVersion(void) {
 	strncat(VersionString, temp, sizeof(VersionString) - strlen(VersionString) - 1);
 	
 	FpgaGatherVersion(FPGA_BITSTREAM_HF, temp, sizeof(temp));
+	strncat(VersionString, temp, sizeof(VersionString) - strlen(VersionString) - 1);
+
+	FpgaGatherVersion(FPGA_BITSTREAM_NFC, temp, sizeof(temp));
 	strncat(VersionString, temp, sizeof(VersionString) - strlen(VersionString) - 1);
 
 	// Send Chip ID and used flash memory
@@ -760,7 +785,14 @@ void UsbPacketReceived(uint8_t *packet, int len) {
 			SendRawCommand14443B_Ex(c);
 			break;
 #endif
-
+#ifdef WITH_ISO18092
+        case CMD_SIM_FLITE:
+            HfSimLite(c->arg[0],c->arg[1]);            
+            break;                 
+        case CMD_SNOOP_FLITE:
+            HfSnoopLite(c->arg[0]);
+            break;
+#endif
 #ifdef WITH_ISO14443a
 		case CMD_SNOOP_ISO_14443a:
 			SniffIso14443a(c->arg[0]);
