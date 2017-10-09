@@ -232,7 +232,8 @@ bool cmd_send(uint32_t cmd, uint32_t arg0, uint32_t arg1, uint32_t arg2, void* d
 
 // util.h
 void HfSnoop(int , int);
-
+void HfSnoopLite(int);
+void HfSimLite(unsigned int,unsigned int);
 //EMV functions
 // emvcmd.h
 extern void EMVTransaction(void);

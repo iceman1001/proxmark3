@@ -12,6 +12,7 @@ APP_INCLUDES = apps.h
 #in the next section to remove that particular feature from compilation.
 # NO space,TABs after the "\" sign.  
 APP_CFLAGS = -DWITH_CRC \
+			 -DWITH_ISO18092 \
 			 -DON_DEVICE \
 			 -DWITH_LF \
 			 -DWITH_HITAG \
@@ -51,7 +52,7 @@ SRC_FLASH = flash.c
 SRC_BEE = bee.c
 
 #the FPGA bitstream files. Note: order matters!
-FPGA_BITSTREAMS = fpga_lf.bit fpga_hf.bit
+FPGA_BITSTREAMS = fpga_lf.bit fpga_hf.bit fpga_nfc.bit
 
 #the zlib source files required for decompressing the fpga config at run time
 SRC_ZLIB = inflate.c inffast.c inftrees.c adler32.c zutil.c

@@ -85,6 +85,67 @@ void PrintAndLog(char *fmt, ...) {
 	//release lock
 	pthread_mutex_unlock(&print_lock);  
 }
+void PrintAndLogRaw(char *fmt, ...)
+{
+	char *saved_line;
+	int saved_point;
+	va_list argptr, argptr2;
+	static FILE *logfile = NULL;
+	static int logging=1;
+
+	// lock this section to avoid interlacing prints from different threads
+	pthread_mutex_lock(&print_lock);
+  
+	if (logging && !logfile) {
+		logfile=fopen("raws.txt", "a");
+		if (!logfile) {
+			fprintf(stderr, "Can't open raws file, logging disabled!\n");
+			logging=0;
+		}
+	}
+
+#ifdef RL_STATE_READCMD
+	// We are using GNU readline.
+	int need_hack = (rl_readline_state & RL_STATE_READCMD) > 0;
+
+	if (need_hack) {
+		saved_point = rl_point;
+		saved_line = rl_copy_text(0, rl_end);
+		rl_save_prompt();
+		rl_replace_line("", 0);
+		rl_redisplay();
+	}
+#else
+	// We are using libedit (OSX), which doesn't support this flag.
+	int need_hack = 0;
+#endif
+	
+	va_start(argptr, fmt);
+	va_copy(argptr2, argptr);
+	vprintf(fmt, argptr);
+	va_end(argptr);
+
+	if (need_hack) {
+		rl_restore_prompt();
+		rl_replace_line(saved_line, 0);
+		rl_point = saved_point;
+		rl_redisplay();
+		free(saved_line);
+	}
+	
+	if (logging && logfile) {
+		vfprintf(logfile, fmt, argptr2);
+		fflush(logfile);
+	}
+	va_end(argptr2);
+
+	if (flushAfterWrite == 1)  //buzzy
+	{
+		fflush(NULL);
+	}
+	//release lock
+	pthread_mutex_unlock(&print_lock);  
+} 
 
 void SetLogFilename(char *fn) {
 	logfilename = fn;

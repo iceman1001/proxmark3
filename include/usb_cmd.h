@@ -223,6 +223,8 @@ typedef struct{
 
 #define CMD_HF_SNIFFER                                                    0x0800
 
+#define CMD_SNOOP_FLITE                                                   0x0820
+#define CMD_SIM_FLITE                                                   0x0821
 // For EMV Commands
 #define CMD_EMV_READ_RECORD                                               0x0700
 #define CMD_EMV_TRANSACTION                                               0x0701

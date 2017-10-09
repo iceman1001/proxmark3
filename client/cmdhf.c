@@ -853,23 +853,36 @@ int CmdHFList(const char *Cmd) {
 	
 	PrintAndLog("Recorded Activity (TraceLen = %d bytes)", traceLen);
 	PrintAndLog("");
+if(protocol !=255)
+    {
 	PrintAndLog("Start = Start of Start Bit, End = End of last modulation. Src = Source of Transfer");
-	if ( protocol == ISO_14443A )
-		PrintAndLog("iso14443a - All times are in carrier periods (1/13.56Mhz)");
-	if ( protocol == ICLASS )
-		PrintAndLog("iClass    - Timings are not as accurate");
-	if ( protocol == LEGIC )
-		PrintAndLog("LEGIC    - Timings are in ticks (1us == 1.5ticks)");
-	if ( protocol == ISO_15693 )
-		PrintAndLog("ISO15693 - Timings are not as accurate");
-	
+	PrintAndLog("iso14443a - All times are in carrier periods (1/13.56Mhz)");
+	PrintAndLog("iClass    - Timings are not as accurate");
 	PrintAndLog("");
-    PrintAndLog("      Start |        End | Src | Data (! denotes parity error)                                   | CRC | Annotation         |");
+	PrintAndLog("      Start |        End | Src | Data (! denotes parity error)                                   | CRC | Annotation         |");
 	PrintAndLog("------------|------------|-----|-----------------------------------------------------------------|-----|--------------------|");
-
-	while(tracepos < traceLen) {
+	while(tracepos < traceLen)
+	{
 		tracepos = printTraceLine(tracepos, traceLen, trace, protocol, showWaitCycles, markCRCBytes);
 	}
+    }
+    else
+    {
+        // there is no point in printing table in case of raw binaries
+        // raw is saved as (python-style) byte list in file raws.txt
+        PrintAndLog("Raw buffer dump");
+        PrintAndLogRaw("[");
+        for(int i=0;i<traceLen;i++)
+        {
+        PrintAndLogRaw("0x%02x",trace[i]);
+        if(i!=traceLen-1)
+        PrintAndLogRaw(",");
+        
+        }
+        PrintAndLogRaw("]\n");
+        PrintAndLog("\n");
+ 
+    } 
 
 	free(trace);
 	return 0;
@@ -930,6 +943,22 @@ int CmdHFSnoop(const char *Cmd) {
 	return 0;
 }
 
+int CmdHFSnoopLite(const char *Cmd)
+{
+	char * pEnd;
+	UsbCommand c = {CMD_SNOOP_FLITE, {strtol(Cmd, &pEnd,0),0,0}};
+	SendCommand(&c);
+	return 0;
+}
+int CmdHFSimLite(const char *Cmd)
+{
+	char * pEnd;
+    uint64_t val=strtoll(Cmd, &pEnd,0);
+	UsbCommand c = {CMD_SIM_FLITE, {(val&0xffffffff),(val>>32),0}};
+	SendCommand(&c);
+	return 0;
+}
+
 static command_t CommandTable[] = {
 	{"help",        CmdHelp,          1, "This help"},
 	{"14a",         CmdHF14A,         1, "{ ISO14443A RFIDs...            }"},
@@ -949,6 +978,8 @@ static command_t CommandTable[] = {
 	{"list",        CmdHFList,        1, "List protocol data in trace buffer"},
 	{"search",      CmdHFSearch,      1, "Search for known HF tags [preliminary]"},
 	{"snoop",       CmdHFSnoop,       0, "<samples to skip (10000)> <triggers to skip (1)> Generic HF Snoop"},
+	{"slite",   CmdHFSnoopLite,     0, "<number of frames to collect (50)> <ignored (1)> Try snooping on NFC-C(F) communication"},
+	{"litesim",   CmdHFSimLite,     0, "<ID to use (8 bytes)> Will try to answer NFC polling requests with provided NDEF2"},    
 	{NULL, NULL, 0, NULL}
 };
 
