@@ -404,6 +404,12 @@ void annotateLegic(char *exp, size_t size, uint8_t* cmd, uint8_t cmdsize){
 	}
 }
 
+void annotateFelica(char *exp, size_t size, uint8_t* cmd, uint8_t cmdsize){	
+	switch(cmd[0]){
+		default                     : snprintf(exp,size ,"?");break;
+	}
+}
+
 /**
  * @brief iso14443A_CRC_check Checks CRC in command or response
  * @param isResponse
@@ -633,6 +639,7 @@ uint16_t printTraceLine(uint16_t tracepos, uint16_t traceLen, uint8_t *trace, ui
 				break;
 			case ISO_14443B:
 			case TOPAZ:
+			case FELICA:
 				crcStatus = iso14443B_CRC_check(isResponse, frame, data_len);
 				break;
 			case ISO_14443A:
@@ -701,6 +708,7 @@ uint16_t printTraceLine(uint16_t tracepos, uint16_t traceLen, uint8_t *trace, ui
 			case TOPAZ:			annotateTopaz(explanation,sizeof(explanation),frame,data_len); break;
 			case ISO_7816_4:	annotateIso7816(explanation,sizeof(explanation),frame,data_len); break;
 			case ISO_15693:		annotateIso15693(explanation,sizeof(explanation),frame,data_len); break;
+			case FELICA:		annotateFelica(explanation,sizeof(explanation),frame,data_len); break;
 			default:			break;
 		}
 	}
@@ -737,6 +745,114 @@ uint16_t printTraceLine(uint16_t tracepos, uint16_t traceLen, uint8_t *trace, ui
 	return tracepos;
 }
 
+void printFelica(uint16_t traceLen, uint8_t *trace)
+{
+	PrintAndLog("    Gap | Src | Data                            | CRC      | Annotation        |");
+	PrintAndLog("--------|-----|---------------------------------|----------|-------------------|");
+    uint16_t tracepos=0;
+    //I am stripping SYNC
+    while(tracepos<traceLen)
+    {
+    if(tracepos+3>=traceLen) break;
+    uint16_t gap= (uint16_t)trace[tracepos+1]+((uint16_t)trace[tracepos]>>8);
+    uint16_t crc_ok=trace[tracepos+2];
+    tracepos+=3;
+    if(tracepos+3>=traceLen) break;
+    uint16_t len=trace[tracepos+2];
+    //printf("!!! %02x %02x %02x %02x %02x %02x %d",trace[tracepos+0],trace[tracepos+1],trace[tracepos+2],trace[tracepos+3],trace[tracepos+4],trace[tracepos+5],len);
+    tracepos+=3; //skip SYNC
+    if(tracepos+len+1>=traceLen) break;
+    uint8_t cmd=trace[tracepos];
+    uint8_t isResponse=cmd&1;
+    char line[32][110];
+    for (int j = 0; j < len+1 && j/8 < 32; j++) 
+        {
+        snprintf(line[j/8]+(( j % 8) * 4), 110, " %02x ", trace[tracepos+j]);
+        }
+    char expbuf[50];
+    switch(cmd)
+    {
+   case FELICA_POLL_REQ:snprintf(expbuf,49,"Poll Req");break;
+   case FELICA_POLL_ACK :snprintf(expbuf,49,"Poll Resp");break;
+
+ case FELICA_REQSRV_REQ :snprintf(expbuf,49,"Request Srvc Req");break;
+case FELICA_REQSRV_ACK :snprintf(expbuf,49,"Request Srv Resp");break;
+
+case FELICA_RDBLK_REQ :snprintf(expbuf,49,"Read block(s) Req");break;
+case FELICA_RDBLK_ACK :snprintf(expbuf,49,"Read block(s) Resp");break;
+
+case FELICA_WRTBLK_REQ :snprintf(expbuf,49,"Write block(s) Req");break;
+case FELICA_WRTBLK_ACK :snprintf(expbuf,49,"Write block(s) Resp");break;
+case FELICA_SRCHSYSCODE_REQ :snprintf(expbuf,49,"Search syscode Req");break;
+case FELICA_SRCHSYSCODE_ACK :snprintf(expbuf,49,"Search syscode Resp");break;
+
+case FELICA_REQSYSCODE_REQ :snprintf(expbuf,49,"Request syscode Req");break;
+case FELICA_REQSYSCODE_ACK :snprintf(expbuf,49,"Request syscode Resp");break;
+
+case FELICA_AUTH1_REQ :snprintf(expbuf,49,"Auth1 Req");break;
+case FELICA_AUTH1_ACK :snprintf(expbuf,49,"Auth1 Resp");break;
+
+case FELICA_AUTH2_REQ :snprintf(expbuf,49,"Auth2 Req");break;
+case FELICA_AUTH2_ACK :snprintf(expbuf,49,"Auth2 Resp");break;
+
+case FELICA_RDSEC_REQ :snprintf(expbuf,49,"Secure read Req");break;
+case FELICA_RDSEC_ACK :snprintf(expbuf,49,"Secure read Resp");break;
+
+case FELICA_WRTSEC_REQ :snprintf(expbuf,49,"Secure write Req");break;
+case FELICA_WRTSEC_ACK :snprintf(expbuf,49,"Secure write Resp");break;
+
+case FELICA_REQSRV2_REQ :snprintf(expbuf,49,"Request Srvc v2 Req");break;
+case FELICA_REQSRV2_ACK :snprintf(expbuf,49,"Request Srvc v2 Resp");break;
+
+case FELICA_GETSTATUS_REQ :snprintf(expbuf,49,"Get status Req");break;
+case FELICA_GETSTATUS_ACK :snprintf(expbuf,49,"Get status Resp");break;
+
+case FELICA_OSVER_REQ :snprintf(expbuf,49,"Get OS Version Req");break;
+case FELICA_OSVER_ACK :snprintf(expbuf,49,"Get OS Version Resp");break;
+
+case FELICA_RESET_MODE_REQ :snprintf(expbuf,49,"Reset mode Req");break;
+case FELICA_RESET_MODE_ACK :snprintf(expbuf,49,"Reset mode Resp");break;
+
+case FELICA_AUTH1V2_REQ :snprintf(expbuf,49,"Auth1 v2 Req");break;
+case FELICA_AUTH1V2_ACK :snprintf(expbuf,49,"Auth1 v2 Resp");break;
+
+case FELICA_AUTH2V2_REQ :snprintf(expbuf,49,"Auth2 v2 Req");break;
+case FELICA_AUTH2V2_ACK :snprintf(expbuf,49,"Auth2 v2 Resp");break;
+
+case FELICA_RDSECV2_REQ :snprintf(expbuf,49,"Secure read v2 Req");break;
+case FELICA_RDSECV2_ACK :snprintf(expbuf,49,"Secure read v2 Resp");break;
+case FELICA_WRTSECV2_REQ :snprintf(expbuf,49,"Secure write v2 Req");break;
+case FELICA_WRTSECV2_ACK :snprintf(expbuf,49,"Secure write v2 Resp");break;
+
+case FELICA_UPDATE_RNDID_REQ :snprintf(expbuf,49,"Update IDr Req");break;
+case FELICA_UPDATE_RNDID_ACK :snprintf(expbuf,49,"Update IDr Resp");break;
+    default: snprintf(expbuf,49,"Unknown");break;
+    }
+    
+	int num_lines = MIN((len )/16 + 1, 16);
+	for (int j = 0; j < num_lines ; j++) 
+    {
+		if (j == 0) {
+			PrintAndLog("%7d | %s |%-32s |%02x %02x %s| %s",
+				gap,
+				(isResponse ? "Tag" : "Rdr"),
+				line[j],
+                trace[tracepos+len],
+                trace[tracepos+len+1],
+				(crc_ok) ? "OK" : "NG",
+				expbuf);
+		} else {
+			PrintAndLog("        |     |%-32s |        |    ",
+				line[j]);
+		}
+	}
+    tracepos+=len+1;
+	}
+    PrintAndLog("");
+	
+}
+
+
 int usage_hf_list(){
 	PrintAndLog("List protocol data in trace buffer.");
 	PrintAndLog("Usage:  hf list <protocol> [f][c]");
@@ -756,6 +872,7 @@ int usage_hf_list(){
 	PrintAndLog("    topaz  - interpret data as topaz communications");
 	PrintAndLog("    7816   - interpret data as iso7816-4 communications");
 	PrintAndLog("    legic  - interpret data as LEGIC communications");
+	PrintAndLog("    felica - interpret data as ISO18092 / FeliCa communications");
 	PrintAndLog("");
 	PrintAndLog("example:	hf list 14a f");
 	PrintAndLog("			hf list iclass");
@@ -818,6 +935,7 @@ int CmdHFList(const char *Cmd) {
 	else if(strcmp(type, "des")== 0)		protocol = MFDES;
 	else if(strcmp(type, "legic")==0)		protocol = LEGIC;
 	else if(strcmp(type, "15")==0)			protocol = ISO_15693;
+	else if(strcmp(type, "felica")==0)		protocol = FELICA;
 	else if(strcmp(type, "raw")== 0)		protocol = -1;//No crc, no annotations
 	else errors = true;
 
@@ -853,37 +971,32 @@ int CmdHFList(const char *Cmd) {
 	
 	PrintAndLog("Recorded Activity (TraceLen = %d bytes)", traceLen);
 	PrintAndLog("");
-if(protocol !=255)
-    {
+ if(protocol==FELICA)
+{
+printFelica(traceLen,trace);
+}
+else
+{ 
 	PrintAndLog("Start = Start of Start Bit, End = End of last modulation. Src = Source of Transfer");
-	PrintAndLog("iso14443a - All times are in carrier periods (1/13.56Mhz)");
-	PrintAndLog("iClass    - Timings are not as accurate");
+	if ( protocol == ISO_14443A )
+		PrintAndLog("iso14443a - All times are in carrier periods (1/13.56Mhz)");
+	if ( protocol == ICLASS )
+		PrintAndLog("iClass    - Timings are not as accurate");
+	if ( protocol == LEGIC )
+		PrintAndLog("LEGIC    - Timings are in ticks (1us == 1.5ticks)");
+	if ( protocol == ISO_15693 )
+		PrintAndLog("ISO15693 - Timings are not as accurate");
+	if ( protocol == FELICA )
+		PrintAndLog("ISO18092 / FeliCa - Timings are not as accurate");	
+	
 	PrintAndLog("");
-	PrintAndLog("      Start |        End | Src | Data (! denotes parity error)                                   | CRC | Annotation         |");
+    PrintAndLog("      Start |        End | Src | Data (! denotes parity error)                                   | CRC | Annotation         |");
 	PrintAndLog("------------|------------|-----|-----------------------------------------------------------------|-----|--------------------|");
-	while(tracepos < traceLen)
-	{
+
+	while(tracepos < traceLen) {
 		tracepos = printTraceLine(tracepos, traceLen, trace, protocol, showWaitCycles, markCRCBytes);
 	}
-    }
-    else
-    {
-        // there is no point in printing table in case of raw binaries
-        // raw is saved as (python-style) byte list in file raws.txt
-        PrintAndLog("Raw buffer dump");
-        PrintAndLogRaw("[");
-        for(int i=0;i<traceLen;i++)
-        {
-        PrintAndLogRaw("0x%02x",trace[i]);
-        if(i!=traceLen-1)
-        PrintAndLogRaw(",");
-        
-        }
-        PrintAndLogRaw("]\n");
-        PrintAndLog("\n");
- 
-    } 
-
+}
 	free(trace);
 	return 0;
 }
@@ -925,6 +1038,14 @@ int CmdHFSearch(const char *Cmd){
 		PrintAndLog("\nValid iClass Tag (or PicoPass Tag) Found - Quiting Search\n");
 		return ans;
 	}
+
+	/*
+	ans = CmdHFFelicaReader("s");
+	if (ans) {
+		PrintAndLog("\nValid ISO18092 / FeliCa Found - Quiting Search\n");
+		return ans;
+	}
+	*/
 	
 	PrintAndLog("\nno known/supported 13.56 MHz tags found\n");
 	return 0;
@@ -943,22 +1064,6 @@ int CmdHFSnoop(const char *Cmd) {
 	return 0;
 }
 
-int CmdHFSnoopLite(const char *Cmd)
-{
-	char * pEnd;
-	UsbCommand c = {CMD_SNOOP_FLITE, {strtol(Cmd, &pEnd,0),0,0}};
-	SendCommand(&c);
-	return 0;
-}
-int CmdHFSimLite(const char *Cmd)
-{
-	char * pEnd;
-    uint64_t val=strtoll(Cmd, &pEnd,0);
-	UsbCommand c = {CMD_SIM_FLITE, {(val&0xffffffff),(val>>32),0}};
-	SendCommand(&c);
-	return 0;
-}
-
 static command_t CommandTable[] = {
 	{"help",        CmdHelp,          1, "This help"},
 	{"14a",         CmdHF14A,         1, "{ ISO14443A RFIDs...            }"},
@@ -968,6 +1073,7 @@ static command_t CommandTable[] = {
 #ifdef WITH_EMV
 	{"emv",         CmdHFEmv,         1, "{ EMV RFIDs...                  }"},
 #endif	
+	{"felica",      CmdHFFelica,      1, "{ ISO18092 / Felica RFIDs...    }"},
 	{"legic",       CmdHFLegic,       1, "{ LEGIC RFIDs...                }"},
 	{"iclass",      CmdHFiClass,      1, "{ ICLASS RFIDs...               }"},
 	{"mf",      	CmdHFMF,		  1, "{ MIFARE RFIDs...               }"},
@@ -978,8 +1084,6 @@ static command_t CommandTable[] = {
 	{"list",        CmdHFList,        1, "List protocol data in trace buffer"},
 	{"search",      CmdHFSearch,      1, "Search for known HF tags [preliminary]"},
 	{"snoop",       CmdHFSnoop,       0, "<samples to skip (10000)> <triggers to skip (1)> Generic HF Snoop"},
-	{"slite",   CmdHFSnoopLite,     0, "<number of frames to collect (50)> <ignored (1)> Try snooping on NFC-C(F) communication"},
-	{"litesim",   CmdHFSimLite,     0, "<ID to use (8 bytes)> Will try to answer NFC polling requests with provided NDEF2"},    
 	{NULL, NULL, 0, NULL}
 };
 

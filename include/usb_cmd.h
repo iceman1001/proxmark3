@@ -137,9 +137,12 @@ typedef struct{
 
 #define CMD_SIMULATE_TAG_ISO_14443B                                       0x0381
 #define CMD_SNOOP_ISO_14443B                                              0x0382
+
 #define CMD_SNOOP_ISO_14443a                                              0x0383
 #define CMD_SIMULATE_TAG_ISO_14443a                                       0x0384
+
 #define CMD_READER_ISO_14443a                                             0x0385
+
 #define CMD_RAW_WRITER_LEGIC_RF                                           0x0386
 #define CMD_SIMULATE_TAG_LEGIC_RF                                         0x0387
 #define CMD_READER_LEGIC_RF                                               0x0388
@@ -163,6 +166,14 @@ typedef struct{
 #define CMD_ICLASS_WRITEBLOCK                                             0x0397
 #define CMD_ICLASS_EML_MEMSET                                             0x0398
 #define CMD_ICLASS_AUTHENTICATION                                         0x0399
+
+// For ISO1092 / FeliCa 
+#define CMD_FELICA_SIMULATE_TAG                                           0x03A0
+#define CMD_FELICA_SNOOP                                                  0x03A1
+#define CMD_FELICA_COMMAND                                                0x03A2
+//temp
+#define CMD_FELICA_LITE_DUMP                                              0x03AA
+#define CMD_FELICA_LITE_SIM                                               0x03AB
 
 // For measurements of the antenna tuning
 #define CMD_MEASURE_ANTENNA_TUNING                                        0x0400
@@ -223,8 +234,6 @@ typedef struct{
 
 #define CMD_HF_SNIFFER                                                    0x0800
 
-#define CMD_SNOOP_FLITE                                                   0x0820
-#define CMD_SIM_FLITE                                                   0x0821
 // For EMV Commands
 #define CMD_EMV_READ_RECORD                                               0x0700
 #define CMD_EMV_TRANSACTION                                               0x0701

@@ -37,7 +37,8 @@
 
 #include <wchar.h>
 #include "at91sam7s512.h"
-#include "config_gpio.h"
+#include "config_gpio.h" 
+#include "proxmark3.h" // USB_CONNECT()
 #include "common.h"
 
 extern void usb_disable();
@@ -48,40 +49,15 @@ extern bool usb_poll_validate_length();
 extern uint32_t usb_read(byte_t* data, size_t len);
 extern uint32_t usb_write(const byte_t* data, const size_t len);
 
-void AT91F_USB_SendData(AT91PS_UDP pUdp, const char *pData, uint32_t length);
-void AT91F_USB_SendZlp(AT91PS_UDP pUdp);
-void AT91F_USB_SendStall(AT91PS_UDP pUdp);
-void AT91F_CDC_Enumerate();
+extern void SetUSBreconnect(int value);
+extern int GetUSBreconnect(void);
+extern void SetUSBconfigured(int value);
+extern int GetUSBconfigured(void);
 
-typedef const struct __attribute__((__packed__)) {
-	const uint32_t dwLength;
-	const uint16_t bcdVersion;
-	const uint16_t wIndex;
-	const uint16_t wCount;
-
-	const uint32_t dwSize;
-	const uint32_t dwPropertyDataType;
-	const uint16_t wPropertyNameLength;
-	const wchar_t bPropertyName[20];
-	const uint32_t dwPropertyDataLength;
-	const wchar_t bPropertyData[39];
-
-	const uint32_t dwSize2;
-	const uint32_t dwPropertyDataType2;
-	const uint16_t wPropertyNameLength2;
-	const wchar_t bPropertyName2[6];
-	const uint32_t dwPropertyDataLength2;
-	const wchar_t bPropertyData2[19];
-
-	const uint32_t dwSize3;
-	const uint32_t dwPropertyDataType3;
-	const uint16_t wPropertyNameLength3;
-	const wchar_t bPropertyName3[6];
-	const uint32_t dwPropertyDataLength3;
-	const wchar_t bPropertyData3[38];
-} g_sOSProperties;
-
-extern const g_sOSProperties g_pOSProperties;
+extern void AT91F_USB_SendData(AT91PS_UDP pUdp, const char *pData, uint32_t length);
+extern void AT91F_USB_SendZlp(AT91PS_UDP pUdp);
+extern void AT91F_USB_SendStall(AT91PS_UDP pUdp);
+extern void AT91F_CDC_Enumerate();
 
 #endif // _USB_CDC_H_
 

@@ -33,7 +33,6 @@ void HideGraphWindow(void);
 void ShowGraphWindow(void);
 void RepaintGraphWindow(void);
 extern void PrintAndLog(char *fmt, ...);
-extern void PrintAndLogRaw(char *fmt, ...);
 extern void SetLogFilename(char *fn);
 
 extern double CursorScaleFactor;

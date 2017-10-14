@@ -32,13 +32,14 @@
 
 #include "cmd.h"
 
+// (iceman 2017) this method is not used anymore. uart_win32 /uart_posix is used instead
 bool cmd_receive(UsbCommand* cmd) {
  
   // Check if there is a usb packet available
   if (!usb_poll_validate_length()) return false;
   
   // Try to retrieve the available command frame
-  size_t rxlen = usb_read((byte_t*)cmd,sizeof(UsbCommand));
+  size_t rxlen = usb_read((byte_t*)cmd, sizeof(UsbCommand));
 
   // Check if the transfer was complete
   if (rxlen != sizeof(UsbCommand)) return false;

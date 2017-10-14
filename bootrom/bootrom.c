@@ -88,7 +88,7 @@ void UsbPacketReceived(uint8_t *packet, int len) {
 	UsbCommand* c = (UsbCommand *)packet;
 	volatile uint32_t *p;
 
-	if(len != sizeof(UsbCommand)) Fatal();
+	if ( len != sizeof(UsbCommand)) Fatal();
   
 	uint32_t arg0 = (uint32_t)c->arg[0];
   
@@ -194,17 +194,18 @@ static void flash_mode(int externally_entered) {
 	size_t rx_len;
 
 	usb_enable();
-	for (volatile size_t i=0; i<0x100000; i++) {};
+	//for (volatile size_t i=0; i<0x100000; i++) {};
 
 	for(;;) {
-		WDT_HIT();
 
-		if (usb_poll()) {
+		if ( usb_poll_validate_length())  {
 			rx_len = usb_read(rx, sizeof(UsbCommand));
-			if (rx_len)
+			if (rx_len == sizeof(UsbCommand))
 				UsbPacketReceived(rx, rx_len);
 		}
 
+		WDT_HIT();
+				
 		if (!externally_entered && !BUTTON_PRESS()) {
 			/* Perform a reset to leave flash mode */
 			usb_disable();

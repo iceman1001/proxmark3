@@ -61,9 +61,6 @@ const struct timeval timeout = {
   .tv_usec = 30000  // 30000 micro seconds
 };
 
-// Overall timeout for receives -- 300ms
-#define RECV_TOTAL_TIMEOUT_MS 300
-
 serial_port uart_open(const char* pcPortName)
 {
   serial_port_unix* sp = malloc(sizeof(serial_port_unix));
@@ -128,10 +125,6 @@ serial_port uart_open(const char* pcPortName)
 }
 
 void uart_close(const serial_port sp) {
-  if (!sp) return; 
-  if (sp == INVALID_SERIAL_PORT) return;
-  if (sp == CLAIMED_SERIAL_PORT) return;
-
   serial_port_unix* spu = (serial_port_unix*)sp;
   tcflush(spu->fd, TCIOFLUSH);
   tcsetattr(spu->fd, TCSANOW, &(spu->tiOld));
@@ -151,18 +144,11 @@ void uart_close(const serial_port sp) {
   free(sp);
 }
 
-bool uart_cts(const serial_port sp) {
-  char status;
-  if (ioctl(((serial_port_unix*)sp)->fd,TIOCMGET,&status) < 0) return false;
-  return (status & TIOCM_CTS);
-}
-
 bool uart_receive(const serial_port sp, byte_t* pbtRx, size_t pszMaxRxLen, size_t* pszRxLen) {
   int res;
   int byteCount;
   fd_set rfds;
   struct timeval tv;
-  uint64_t timeout_at = msclock() + RECV_TOTAL_TIMEOUT_MS;
   
   // Reset the output count
   *pszRxLen = 0;
@@ -212,8 +198,8 @@ bool uart_receive(const serial_port sp, byte_t* pbtRx, size_t pszMaxRxLen, size_
       return true;
     }
     
-//  } while (byteCount);
-  } while (msclock() < timeout_at);
+  } while (byteCount);
+
   return true;
 }
 
@@ -222,33 +208,32 @@ bool uart_send(const serial_port sp, const byte_t* pbtTx, const size_t szTxLen) 
   size_t szPos = 0;
   fd_set rfds;
   struct timeval tv;
-  const serial_port_unix* spu = (serial_port_unix*)sp;
 
   while (szPos < szTxLen) {
     // Reset file descriptor
     FD_ZERO(&rfds);
-    FD_SET(spu->fd, &rfds);
+    FD_SET(((serial_port_unix*)sp)->fd,&rfds);
     tv = timeout;
-    res = select(spu->fd + 1, NULL, &rfds, NULL, &tv);
+    res = select(((serial_port_unix*)sp)->fd+1, NULL, &rfds, NULL, &tv);
     
     // Write error
     if (res < 0) {
-		printf("UART:: write error\n");
+		printf("UART:: write error (%d)\n", res);
 		return false;
     }
     
     // Write time-out
     if (res == 0) {
-		printf("UART:: write time-out\n");
+		printf("UART:: write time-out (%d)\n", res);
 		return false;
     }
     
     // Send away the bytes
-    res = write(spu->fd, pbtTx + szPos, szTxLen-szPos);
+    res = write(((serial_port_unix*)sp)->fd,pbtTx+szPos,szTxLen-szPos);
     
     // Stop if the OS has some troubles sending the data
     if (res <= 0) {
-		printf("UART:: os troubles\n");
+		printf("UART:: os troubles (%d)\n", res);
 		return false;
 	}
     
