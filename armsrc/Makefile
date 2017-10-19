@@ -22,7 +22,7 @@ APP_CFLAGS = -DWITH_CRC \
 			 -DWITH_ISO14443a \
 			 -DWITH_ICLASS \
 			 -DWITH_HFSNOOP \
-			 -DWITH_HF_YOUNG \
+			 -DWITH_HF_COLIN \
 			 -fno-strict-aliasing -ffunction-sections -fdata-sections
 
 ### IMPORTANT -  move the commented variable below this line
@@ -37,6 +37,7 @@ APP_CFLAGS = -DWITH_CRC \
 #			 -DWITH_LF_HIDCORP
 #			 -DWITH_HF_YOUNG
 #			 -DWITH_HF_MATTYRUN
+#			 -DWITH_HF_COLIN
 
 
 SRC_LCD = fonts.c LCD.c
@@ -95,7 +96,8 @@ ARMSRC = fpgaloader.c \
 	parity.c \
 	usb_cdc.c \
 	cmd.c \
-	hf_young.c
+	hf_colin.c
+	#hf_young.c
 	#	lf_samyrun.c \
 	
 # Do not move this inclusion before the definition of {THUMB,ASM,ARM}SRC

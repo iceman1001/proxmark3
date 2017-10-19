@@ -72,7 +72,7 @@ VPATH = . ../common ../common/crapto1 ../fpga ../zlib ../armsrc/Standalone --/ua
 
 INCLUDES = ../include/proxmark3.h ../include/at91sam7s512.h ../include/config_gpio.h ../include/usb_cmd.h $(APP_INCLUDES)
 
-CFLAGS =  -c $(INCLUDE) -Wall -Werror -pedantic -Wunused -std=c99 $(APP_CFLAGS) -Os
+CFLAGS =  -c $(INCLUDE) -Wall -pedantic -Wunused -std=c99 $(APP_CFLAGS) -Os
 LDFLAGS = -nostartfiles -nodefaultlibs -Wl,-gc-sections -n
 LIBS = -lgcc
 
