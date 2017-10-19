@@ -13,20 +13,10 @@
 #define __HF_COLIN_H
 
 #include "iso14443a.h"
+//#include "printf.h"
 #include "protocols.h"
 #include "standalone.h" // standalone definitions
 #include <stdbool.h>    // for bool
-
-/*
-#define _ESC_ 0x1B
-#define _WHITE_ 0xc0
-#define _GREEN_ 0xc1
-#define _RED_ 0xc2
-#define _BLUE_ 0xc3
-#define _YELLOW_ 0xc4
-#define _ORANGE_ 0xc5
-#define _CYAN_ 0xc6
-*/
 
 #define _RED_ "\x1b[31m"
 #define _GREEN_ "\x1b[32m"
@@ -52,9 +42,18 @@
 #define BG_BLACK 40
 printf("%c[%d;%d;%dmHello World", 0x1B, BRIGHT, RED, BG_BLACK);
 */
+/*
+#define _ESC_ 0x1B
+#define _WHITE_ 0xc0
+#define _GREEN_ 0xc1
+#define _RED_ 0xc2
+#define _BLUE_ 0xc3
+#define _YELLOW_ 0xc4
+#define _ORANGE_ 0xc5
+#define _CYAN_ 0xc6
+*/
 
 int cjat91_saMifareChkKeys(uint8_t blockNo, uint8_t keyType, bool clearTrace, uint8_t keyCount, uint8_t *datain, uint64_t *key);
-int saMifareChkKeys(uint8_t blockNo, uint8_t keyType, bool clearTrace, uint8_t keyCount, uint8_t *datain, uint64_t *key);
 void e_MifareECardLoad(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint8_t *datain);
 void saMifareMakeTag(void);
 int saMifareCSetBlock(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint8_t *datain);

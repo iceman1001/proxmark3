@@ -90,18 +90,17 @@ void RunMod() {
 
     /* TODO : remember why we actually had need to initialize this array in such specific case
        and why not a simple memset abuse to 0xffize the whole space in one go ? */
-    uint8_t foundKey[2][40][6]; //= [ {0xff} ]; /* C99 abusal 6.7.8.21 */
-    /*
+    // uint8_t foundKey[2][40][6]; //= [ {0xff} ]; /* C99 abusal 6.7.8.21 */
+
     uint8_t foundKey[2][40][6];
-        for (uint16_t t = 0; t < 2; t++) {
-          for (uint16_t sectorNo = 0; sectorNo < sectorsCnt; sectorNo++) {
-              //          validKey[t][sectorNo] = false;
-              for (uint16_t i = 0; i < 6; i++) {
-                  foundKey[t][sectorNo][i] = 0xff;
-              }
-          }
-      }
-    */
+    for (uint16_t t = 0; t < 2; t++) {
+        for (uint16_t sectorNo = 0; sectorNo < sectorsCnt; sectorNo++) {
+            //          validKey[t][sectorNo] = false;
+            for (uint16_t i = 0; i < 6; i++) {
+                foundKey[t][sectorNo][i] = 0xff;
+            }
+        }
+    }
 
     int key = -1;
     // int block = 0;
@@ -164,9 +163,8 @@ void RunMod() {
     /* then let’s expose this “optimal case” of “well known vigik schemes” : */
     for (uint8_t type = 0; type < 2 && !err && !trapped; type++) {
         for (int sec = 0; sec < sectorsCnt && !err && !trapped; ++sec) {
-            /* see after for the chk, nothing fancy */
-            // key = cjat91_saMifareChkKeys(sec * 4, type, NULL, size, &keyBlock[0], &key64);
-            key = saMifareChkKeys(sec * 4, type, NULL, size, &keyBlock[0], &key64);
+            key = cjat91_saMifareChkKeys(sec * 4, type, NULL, size, &keyBlock[0], &key64);
+            // key = saMifareChkKeys(sec * 4, type, NULL, size, &keyBlock[0], &key64);
             if (key == -1) {
                 err = 1;
                 allKeysFound = false;
@@ -180,14 +178,12 @@ void RunMod() {
                 break;
             } else {
                 /*  BRACE YOURSELF : AS LONG AS WE TRAP A KNOWN KEY, WE STOP CHECKING AND ENFORCE KNOWN SCHEMES */
+                uint8_t tosendkey[12];
                 num_to_bytes(key64, 6, foundKey[type][sec]);
-                /*uint8_t tosendkey[12];
-                sprintf(tosendkey, "%02x%02x%02x%02x%02x%02x", foundKey[type][sec][0], foundKey[type][sec][1], foundKey[type][sec][2],
-                        foundKey[type][sec][3], foundKey[type][sec][4], foundKey[type][sec][5]);
-                cmd_send(CMD_CJB_INFORM_CLIENT_KEY, 12, sec, type, tosendkey, 12);*/
+                Dbprintf("SEC: %d ; KEY : %012" PRIx64 " ; TYP: %i", sec, key64, type);
+                /*cmd_send(CMD_CJB_INFORM_CLIENT_KEY, 12, sec, type, tosendkey, 12);*/
 
                 switch (key64) {
-
                 /////////////////////////////////////////////////////////
                 // COMMON SCHEME 1  : INFINITRON/HEXACT
                 case 0x484558414354:
@@ -201,44 +197,91 @@ void RunMod() {
                     uint16_t t = 0;
                     for (uint16_t sectorNo = 0; sectorNo < sectorsCnt; sectorNo++) {
                         num_to_bytes(0x484558414354, 6, foundKey[t][sectorNo]);
-                        /* Again this is to be send to special device controller, will
-                            sprintf(tosendkey, "%02x%02x%02x%02x%02x%02x", foundKey[t][sectorNo][0], foundKey[t][sectorNo][1], foundKey[t][sectorNo][2],
-                                    foundKey[t][sectorNo][3], foundKey[t][sectorNo][4], foundKey[t][sectorNo][5]);
-                            cmd_send(CMD_CJB_INFORM_CLIENT_KEY, 12, sectorNo, t, tosendkey, 12); */
+                        sprintf(tosendkey, "%02x%02x%02x%02x%02x%02x", foundKey[t][sectorNo][0], foundKey[t][sectorNo][1], foundKey[t][sectorNo][2],
+                                foundKey[t][sectorNo][3], foundKey[t][sectorNo][4], foundKey[t][sectorNo][5]);
+                        Dbprintf("SEC: %d ; KEY : %s ; TYP: %d", sectorNo, tosendkey, t);
                     }
                     t = 1;
                     uint16_t sectorNo = 0;
                     num_to_bytes(0xa22ae129c013, 6, foundKey[t][sectorNo]);
+                    sprintf(tosendkey, "%02x%02x%02x%02x%02x%02x", foundKey[t][sectorNo][0], foundKey[t][sectorNo][1], foundKey[t][sectorNo][2],
+                            foundKey[t][sectorNo][3], foundKey[t][sectorNo][4], foundKey[t][sectorNo][5]);
+                    Dbprintf("SEC: %d ; KEY : %s ; TYP: %d", sectorNo, tosendkey, t);
                     sectorNo = 1;
                     num_to_bytes(0x49fae4e3849f, 6, foundKey[t][sectorNo]);
+                    sprintf(tosendkey, "%02x%02x%02x%02x%02x%02x", foundKey[t][sectorNo][0], foundKey[t][sectorNo][1], foundKey[t][sectorNo][2],
+                            foundKey[t][sectorNo][3], foundKey[t][sectorNo][4], foundKey[t][sectorNo][5]);
+                    Dbprintf("SEC: %d ; KEY : %s ; TYP: %d", sectorNo, tosendkey, t);
                     sectorNo = 2;
                     num_to_bytes(0x38fcf33072e0, 6, foundKey[t][sectorNo]);
+                    sprintf(tosendkey, "%02x%02x%02x%02x%02x%02x", foundKey[t][sectorNo][0], foundKey[t][sectorNo][1], foundKey[t][sectorNo][2],
+                            foundKey[t][sectorNo][3], foundKey[t][sectorNo][4], foundKey[t][sectorNo][5]);
+                    Dbprintf("SEC: %d ; KEY : %s ; TYP: %d", sectorNo, tosendkey, t);
                     sectorNo = 3;
                     num_to_bytes(0x8ad5517b4b18, 6, foundKey[t][sectorNo]);
+                    sprintf(tosendkey, "%02x%02x%02x%02x%02x%02x", foundKey[t][sectorNo][0], foundKey[t][sectorNo][1], foundKey[t][sectorNo][2],
+                            foundKey[t][sectorNo][3], foundKey[t][sectorNo][4], foundKey[t][sectorNo][5]);
+                    Dbprintf("SEC: %d ; KEY : %s ; TYP: %d", sectorNo, tosendkey, t);
                     sectorNo = 4;
                     num_to_bytes(0x509359f131b1, 6, foundKey[t][sectorNo]);
+                    sprintf(tosendkey, "%02x%02x%02x%02x%02x%02x", foundKey[t][sectorNo][0], foundKey[t][sectorNo][1], foundKey[t][sectorNo][2],
+                            foundKey[t][sectorNo][3], foundKey[t][sectorNo][4], foundKey[t][sectorNo][5]);
+                    Dbprintf("SEC: %d ; KEY : %s ; TYP: %d", sectorNo, tosendkey, t);
                     sectorNo = 5;
                     num_to_bytes(0x6c78928e1317, 6, foundKey[t][sectorNo]);
+                    sprintf(tosendkey, "%02x%02x%02x%02x%02x%02x", foundKey[t][sectorNo][0], foundKey[t][sectorNo][1], foundKey[t][sectorNo][2],
+                            foundKey[t][sectorNo][3], foundKey[t][sectorNo][4], foundKey[t][sectorNo][5]);
+                    Dbprintf("SEC: %d ; KEY : %s ; TYP: %d", sectorNo, tosendkey, t);
                     sectorNo = 6;
                     num_to_bytes(0xaa0720018738, 6, foundKey[t][sectorNo]);
+                    sprintf(tosendkey, "%02x%02x%02x%02x%02x%02x", foundKey[t][sectorNo][0], foundKey[t][sectorNo][1], foundKey[t][sectorNo][2],
+                            foundKey[t][sectorNo][3], foundKey[t][sectorNo][4], foundKey[t][sectorNo][5]);
+                    Dbprintf("SEC: %d ; KEY : %s ; TYP: %d", sectorNo, tosendkey, t);
                     sectorNo = 7;
                     num_to_bytes(0xa6cac2886412, 6, foundKey[t][sectorNo]);
+                    sprintf(tosendkey, "%02x%02x%02x%02x%02x%02x", foundKey[t][sectorNo][0], foundKey[t][sectorNo][1], foundKey[t][sectorNo][2],
+                            foundKey[t][sectorNo][3], foundKey[t][sectorNo][4], foundKey[t][sectorNo][5]);
+                    Dbprintf("SEC: %d ; KEY : %s ; TYP: %d", sectorNo, tosendkey, t);
                     sectorNo = 8;
                     num_to_bytes(0x62d0c424ed8e, 6, foundKey[t][sectorNo]);
+                    sprintf(tosendkey, "%02x%02x%02x%02x%02x%02x", foundKey[t][sectorNo][0], foundKey[t][sectorNo][1], foundKey[t][sectorNo][2],
+                            foundKey[t][sectorNo][3], foundKey[t][sectorNo][4], foundKey[t][sectorNo][5]);
+                    Dbprintf("SEC: %d ; KEY : %s ; TYP: %d", sectorNo, tosendkey, t);
                     sectorNo = 9;
                     num_to_bytes(0xe64a986a5d94, 6, foundKey[t][sectorNo]);
+                    sprintf(tosendkey, "%02x%02x%02x%02x%02x%02x", foundKey[t][sectorNo][0], foundKey[t][sectorNo][1], foundKey[t][sectorNo][2],
+                            foundKey[t][sectorNo][3], foundKey[t][sectorNo][4], foundKey[t][sectorNo][5]);
+                    Dbprintf("SEC: %d ; KEY : %s ; TYP: %d", sectorNo, tosendkey, t);
                     sectorNo = 10;
                     num_to_bytes(0x8fa1d601d0a2, 6, foundKey[t][sectorNo]);
+                    sprintf(tosendkey, "%02x%02x%02x%02x%02x%02x", foundKey[t][sectorNo][0], foundKey[t][sectorNo][1], foundKey[t][sectorNo][2],
+                            foundKey[t][sectorNo][3], foundKey[t][sectorNo][4], foundKey[t][sectorNo][5]);
+                    Dbprintf("SEC: %d ; KEY : %s ; TYP: %d", sectorNo, tosendkey, t);
                     sectorNo = 11;
                     num_to_bytes(0x89347350bd36, 6, foundKey[t][sectorNo]);
+                    sprintf(tosendkey, "%02x%02x%02x%02x%02x%02x", foundKey[t][sectorNo][0], foundKey[t][sectorNo][1], foundKey[t][sectorNo][2],
+                            foundKey[t][sectorNo][3], foundKey[t][sectorNo][4], foundKey[t][sectorNo][5]);
+                    Dbprintf("SEC: %d ; KEY : %s ; TYP: %d", sectorNo, tosendkey, t);
                     sectorNo = 12;
                     num_to_bytes(0x66d2b7dc39ef, 6, foundKey[t][sectorNo]);
+                    sprintf(tosendkey, "%02x%02x%02x%02x%02x%02x", foundKey[t][sectorNo][0], foundKey[t][sectorNo][1], foundKey[t][sectorNo][2],
+                            foundKey[t][sectorNo][3], foundKey[t][sectorNo][4], foundKey[t][sectorNo][5]);
+                    Dbprintf("SEC: %d ; KEY : %s ; TYP: %d", sectorNo, tosendkey, t);
                     sectorNo = 13;
                     num_to_bytes(0x6bc1e1ae547d, 6, foundKey[t][sectorNo]);
+                    sprintf(tosendkey, "%02x%02x%02x%02x%02x%02x", foundKey[t][sectorNo][0], foundKey[t][sectorNo][1], foundKey[t][sectorNo][2],
+                            foundKey[t][sectorNo][3], foundKey[t][sectorNo][4], foundKey[t][sectorNo][5]);
+                    Dbprintf("SEC: %d ; KEY : %s ; TYP: %d", sectorNo, tosendkey, t);
                     sectorNo = 14;
                     num_to_bytes(0x22729a9bd40f, 6, foundKey[t][sectorNo]);
+                    sprintf(tosendkey, "%02x%02x%02x%02x%02x%02x", foundKey[t][sectorNo][0], foundKey[t][sectorNo][1], foundKey[t][sectorNo][2],
+                            foundKey[t][sectorNo][3], foundKey[t][sectorNo][4], foundKey[t][sectorNo][5]);
+                    Dbprintf("SEC: %d ; KEY : %s ; TYP: %d", sectorNo, tosendkey, t);
                     sectorNo = 15;
                     num_to_bytes(0x484558414354, 6, foundKey[t][sectorNo]);
+                    sprintf(tosendkey, "%02x%02x%02x%02x%02x%02x", foundKey[t][sectorNo][0], foundKey[t][sectorNo][1], foundKey[t][sectorNo][2],
+                            foundKey[t][sectorNo][3], foundKey[t][sectorNo][4], foundKey[t][sectorNo][5]);
+                    Dbprintf("SEC: %d ; KEY : %s ; TYP: %d", sectorNo, tosendkey, t);
                     trapped = 1;
                     break;
                 ////////////////END OF SCHEME 1//////////////////////////////
@@ -256,6 +299,9 @@ void RunMod() {
                     for (uint16_t t = 0; t < 2; t++) {
                         for (uint16_t sectorNo = 0; sectorNo < sectorsCnt; sectorNo++) {
                             num_to_bytes(key64, 6, foundKey[t][sectorNo]);
+                            sprintf(tosendkey, "%02x%02x%02x%02x%02x%02x", foundKey[t][sectorNo][0], foundKey[t][sectorNo][1], foundKey[t][sectorNo][2],
+                                    foundKey[t][sectorNo][3], foundKey[t][sectorNo][4], foundKey[t][sectorNo][5]);
+                            Dbprintf("SEC: %d ; KEY : %s ; TYP: %d", sectorNo, tosendkey, t);
                         }
                     }
                     trapped = 1;
@@ -275,11 +321,17 @@ void RunMod() {
                     t = 0;
                     for (uint16_t sectorNo = 0; sectorNo < sectorsCnt; sectorNo++) {
                         num_to_bytes(0x414c41524f4e, 6, foundKey[t][sectorNo]);
+                        sprintf(tosendkey, "%02x%02x%02x%02x%02x%02x", foundKey[t][sectorNo][0], foundKey[t][sectorNo][1], foundKey[t][sectorNo][2],
+                                foundKey[t][sectorNo][3], foundKey[t][sectorNo][4], foundKey[t][sectorNo][5]);
+                        Dbprintf("SEC: %d ; KEY : %s ; TYP: %d", sectorNo, tosendkey, t);
                         ;
                     }
                     t = 1;
                     for (uint16_t sectorNo = 0; sectorNo < sectorsCnt; sectorNo++) {
                         num_to_bytes(0x424c41524f4e, 6, foundKey[t][sectorNo]);
+                        sprintf(tosendkey, "%02x%02x%02x%02x%02x%02x", foundKey[t][sectorNo][0], foundKey[t][sectorNo][1], foundKey[t][sectorNo][2],
+                                foundKey[t][sectorNo][3], foundKey[t][sectorNo][4], foundKey[t][sectorNo][5]);
+                        Dbprintf("SEC: %d ; KEY : %s ; TYP: %d", sectorNo, tosendkey, t);
                     }
                     trapped = 1;
                     break;
@@ -364,112 +416,6 @@ void RunMod() {
     Dbprintf("Endof Standalone ! You can take shell back");
 
     return;
-}
-
-int saMifareChkKeys(uint8_t blockNo, uint8_t keyType, bool clearTrace, uint8_t keyCount, uint8_t *datain, uint64_t *key) {
-
-    // hard config
-    //  uint8_t retries = 5;
-    //  bool retry = true;
-    bool have_uid = FALSE;
-    // uint8_t cascade_levels; //= 0;
-    uint32_t timeout = 0;
-
-    uint64_t ui64Key = 0;
-    int i;
-    byte_t isOK = 0;
-    uint8_t uid[10];
-    uint32_t cuid;
-    struct Crypto1State mpcs = {0, 0};
-    struct Crypto1State *pcs;
-    pcs = &mpcs;
-
-    // clear debug level
-    // int OLD_MF_DBGLEVEL = MF_DBGLEVEL;
-    MF_DBGLEVEL = MF_DBG_NONE;
-
-    LED_A_ON();
-    LED_B_OFF();
-    LED_C_OFF();
-    iso14443a_setup(FPGA_HF_ISO14443A_READER_LISTEN);
-
-    //  if (clearTrace) clear_trace();
-    set_tracing(FALSE);
-
-    for (i = 0; i < keyCount; ++i) {
-
-        // mifare_classic_halt(pcs, cuid);
-
-        if (!have_uid) { // need a full select cycle to get the uid first
-            iso14a_card_select_t card_info;
-            if (!iso14443a_select_card(uid, NULL, &cuid, true, 0, true)) {
-                Dbprintf("FATAL : E_MF_NOTAG\n");
-                break;
-            }
-            switch (card_info.uidlen) {
-            case 4:
-                // cascade_levels = 1;
-                break;
-            case 7:
-                // cascade_levels = 2;
-                break;
-            case 10:
-                // cascade_levels = 3;
-                break;
-            default:
-                break;
-                // break;
-            }
-            have_uid = TRUE;
-            // continue;
-        } else { // no need for anticollision. We can directly select the card
-                 //                      if(!iso14443a_select_card(uid, NULL, NULL, false, cascade_levels)) {
-            if (!iso14443a_select_card(uid, NULL, &cuid, true, 0, true)) {
-                Dbprintf("FATAL : E_MF_LOSTTAG");
-                // continue; //what ?
-                break;
-            }
-        }
-
-        ui64Key = bytes_to_num(datain + i * 6, 6);
-
-        if (mifare_classic_auth(pcs, cuid, blockNo, keyType, ui64Key, AUTH_FIRST)) {
-
-            uint8_t dummy_answer = 0;
-            ReaderTransmit(&dummy_answer, 1, NULL);
-            timeout = GetCountSspClk() + AUTHENTICATION_TIMEOUT;
-
-            // wait for the card to become ready again
-            while (GetCountSspClk() < timeout)
-                ;
-
-            continue;
-        }
-        isOK = 1;
-        crypto1_destroy(pcs);
-        FpgaWriteConfWord(FPGA_MAJOR_MODE_OFF);
-        *key = ui64Key;
-        return i;
-        break;
-    }
-    crypto1_destroy(pcs);
-    FpgaWriteConfWord(FPGA_MAJOR_MODE_OFF);
-    return -1;
-
-    //  ----------------------------- crypto1 destroy
-    crypto1_destroy(pcs);
-
-    FpgaWriteConfWord(FPGA_MAJOR_MODE_OFF);
-    LEDsoff();
-
-    // restore debug level
-    // MF_DBGLEVEL = OLD_MF_DBGLEVEL;
-
-    if ((isOK == 1) && (i < keyCount)) { // found
-        *key = ui64Key;
-        return i;
-    }
-    return -1; // not found
 }
 
 /*
