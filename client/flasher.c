@@ -77,28 +77,28 @@ int OpenProxmark() {
 
 	//poll once a second
 	if (sp == INVALID_SERIAL_PORT) {
-		//fprintf(stderr, "ERROR: invalid serial port\n");
+		printf("ERROR: invalid serial port\n");
 		return 0;
 	} else if (sp == CLAIMED_SERIAL_PORT) {
-		fprintf(stderr, "ERROR: serial port is claimed by another process\n");
+		printf("ERROR: serial port is claimed by another process\n");
 		return 0;
 	} 	
 	return 1;
 }
 
 static void usage(char *argv0) {
-	fprintf(stdout, "Usage:   %s <port> [-b] image.elf [image.elf...]\n\n", argv0);
-	fprintf(stdout, "\t-b\tEnable flashing of bootloader area (DANGEROUS)\n\n");
-	fprintf(stdout, "\nExample (Linux):\n\n\t %s  /dev/ttyACM0 armsrc/obj/fullimage.elf\n", argv0);
-	fprintf(stdout, "\nExample (OS)   :\n\n\t %s  /dev/cu.usbmodem1451 armsrc/obj/fullimage.elf\n", argv0);
-	fprintf(stdout, "\nExample (WIN)  :\n\n\t %s  com3 armsrc/obj/fullimage.elf\n", argv0);
-	fprintf(stdout, "\nNote (Linux): if the flasher gets stuck in 'Waiting for Proxmark to reappear on <DEVICE>',\n");
-	fprintf(stdout, "              you need to blacklist proxmark for modem-manager - see wiki for more details:\n");
-	fprintf(stdout, "        old ref --> http://code.google.com/p/proxmark3/wiki/Linux\n\n");
-	fprintf(stdout, "       new refs --> ");
-	fprintf(stdout, "              https://github.com/Proxmark/proxmark3/wiki/Gentoo Linux\n\n");
-	fprintf(stdout, "              https://github.com/Proxmark/proxmark3/wiki/Ubuntu Linux\n\n");
-	fprintf(stdout, "              https://github.com/Proxmark/proxmark3/wiki/OSX\n\n");	
+	fprintf(stderr, "Usage:   %s <port> [-b] image.elf [image.elf...]\n\n", argv0);
+	fprintf(stderr, "\t-b\tEnable flashing of bootloader area (DANGEROUS)\n\n");
+	fprintf(stderr, "\nExample (Linux):\n\n\t %s  /dev/ttyACM0 armsrc/obj/fullimage.elf\n", argv0);
+	fprintf(stderr, "\nExample (OS)   :\n\n\t %s  /dev/cu.usbmodem1451 armsrc/obj/fullimage.elf\n", argv0);
+	fprintf(stderr, "\nExample (WIN)  :\n\n\t %s  com3 armsrc/obj/fullimage.elf\n", argv0);
+	fprintf(stderr, "\nNote (Linux): if the flasher gets stuck in 'Waiting for Proxmark to reappear on <DEVICE>',\n");
+	fprintf(stderr, "              you need to blacklist proxmark for modem-manager - see wiki for more details:\n");
+	fprintf(stderr, "        old ref --> http://code.google.com/p/proxmark3/wiki/Linux\n\n");
+	fprintf(stderr, "       new refs --> ");
+	fprintf(stderr, "              https://github.com/Proxmark/proxmark3/wiki/Gentoo Linux\n\n");
+	fprintf(stderr, "              https://github.com/Proxmark/proxmark3/wiki/Ubuntu Linux\n\n");
+	fprintf(stderr, "              https://github.com/Proxmark/proxmark3/wiki/OSX\n\n");	
 }
 
 int main(int argc, char **argv) {
@@ -135,29 +135,29 @@ int main(int argc, char **argv) {
 
 	serial_port_name = argv[1];
   
-	fprintf(stdout, "Waiting for Proxmark to appear on %s", serial_port_name);
+	fprintf(stderr, "Waiting for Proxmark to appear on %s", serial_port_name);
 	do {
 		msleep(500);
 		fprintf(stderr, ".");
 	} while (!OpenProxmark(0));
 
-	fprintf(stdout, " Found.\n");
+	fprintf(stderr, " Found.\n");
 
 	res = flash_start_flashing(can_write_bl, serial_port_name);
 	if (res < 0)
 		return -1;
 
-	fprintf(stdout, "\nFlashing...\n");
+	fprintf(stderr, "\nFlashing...\n");
 
 	for (int i = 0; i < num_files; i++) {
 		res = flash_write(&files[i]);
 		if (res < 0)
 			return -1;
 		flash_free(&files[i]);
-		fprintf(stdout, "\n");
+		fprintf(stderr, "\n");
 	}
 
-	fprintf(stdout, "Resetting hardware...\n");
+	fprintf(stderr, "Resetting hardware...\n");
 
 	res = flash_stop_flashing();
 	if (res < 0)
@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
 
 	CloseProxmark();
 
-	fprintf(stdout, "All done.\n\n");
-	fprintf(stdout, "Have a nice day!\n");
+	fprintf(stderr, "All done.\n\n");
+	fprintf(stderr, "Have a nice day!\n");
 	return 0;
 }
