@@ -279,7 +279,7 @@ static const char bosDescriptor[] = {
 };
 
 // Microsoft OS Extended Configuration Compatible ID Descriptor
-static const char CompatIDFeatureDescriptor[] = {
+/*static const char CompatIDFeatureDescriptor[] = {
 		0x28, 0x00, 0x00, 0x00,							// Descriptor Length 40bytes (0x28)
 		0x00, 0x01,										// Version ('1.0')
 		MS_EXTENDED_COMPAT_ID, 0x00,					// Compatibility ID Descriptor Index  0x0004 
@@ -291,10 +291,10 @@ static const char CompatIDFeatureDescriptor[] = {
 		0x57, 0x49, 0x4E, 0x55, 0x53, 0x42, 0x00, 0x00,	// Compatible ID  ('WINUSB\0\0')  (8bytes)
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,	// Sub-Compatible ID (8byte)
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00				// Reserved (6bytes)
-};
+};*/
 
 // Microsoft Extended Properties Feature Descriptor
-static const char OSprop[] = {
+/*static const char OSprop[] = {
 		// u32 Descriptor Length (10+132+64+102 == 308
 		0x34, 0x01, 0, 0,
 		// u16 Version ('1.0')
@@ -350,7 +350,7 @@ static const char OSprop[] = {
 		'\\',0,'s',0,'y',0,'s',0,'t',0,'e',0,'m',0,'3',0,'2',0,'\\',0,
 		'S',0,'h',0,'e',0,'l',0,'l',0,'3',0,'2',0,'.',0,'d',0,'l',0,'l',0,',',0,
 		'-',0,'1',0,'3',0,0,0
-};
+};*/
 
 static const char StrLanguageCodes[] = {
   4,			// Length
