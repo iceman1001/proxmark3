@@ -47,3 +47,6 @@ fpga/*
 #client/*
 # my own traces folder
 client/traces/*
+
+
+client/lualibs/mf_default_keys.lua
