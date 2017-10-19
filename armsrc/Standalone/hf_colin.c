@@ -42,7 +42,7 @@ void RunMod() {
 */
 /* know number of known keys for standalone mode */
 //#define STKEYS 35
-#define STKEYS 3500
+#define STKEYS 35
 
     const uint64_t mfKeys[STKEYS] = {
         0xffffffffffff, // TRANSPORTS
