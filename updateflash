@@ -1,0 +1,20 @@
+#!/bin/bash
+
+
+
+dev=$(ls -1 /dev/tty.usbmodem*)
+
+client/flasher $dev armsrc/obj/fullimage.elf &
+
+sleep 2 && pkill flasher
+sleep 2
+
+dev=$(ls -1 /dev/tty.usbmodem*)
+
+client/flasher $dev  armsrc/obj/fullimage.elf
+
+sleep 4 
+
+dev=$(ls -1 /dev/tty.usbmodem*)
+
+client/proxmark3 $dev

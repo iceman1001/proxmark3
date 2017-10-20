@@ -46,12 +46,23 @@ void RunMod() {
 
     const uint64_t mfKeys[STKEYS] = {
         0xffffffffffff, // TRANSPORTS
+        0x000000000000, // Blankkey
+        0x484558414354, // INFINEONON A / 0F SEC B
         0x414c41524f4e, // ALARON NORALSY
         0x424c41524f4e, // BLARON NORALSY
         0x8829da9daf76, // URMET CAPTIV IF A => ALL A/B
+        0xb0b1b2b3b4b5, // NA
+        0xaabbccddeeff, // NA
+        0x4d3a99c351dd, // NA
+        0x1a982c7e459a, // NA
+        0xd3f7d3f7d3f7, // NA
+        0x714c5c886e97, // NA
+        0x587ee5f9350f, // NA
+        0xa0478cc39091, // NA
+        0x533cb6c723f6, // NA
+        0x8fd0a4f256e9, // NA
         0xa0a1a2a3a4a5, // PUBLIC BLOC0 BTICINO MAD ACCESS
         0x021209197591, // BTCINO UNDETERMINED SPREAKD 0x01->0x13 key
-        0x484558414354, // INFINEONON A / 0F SEC B
         0xa22ae129c013, // INFINEON B 00
         0x49fae4e3849f, // INFINEON B 01
         0x38fcf33072e0, // INFINEON B 02
@@ -66,18 +77,7 @@ void RunMod() {
         0x89347350bd36, // INFINEON B 0B
         0x66d2b7dc39ef, // INFINEON B 0C
         0x6bc1e1ae547d, // INFINEON B 0D
-        0x22729a9bd40f, // INFINEON B 0E
-        0x000000000000, // Blankkey
-        0xb0b1b2b3b4b5, // NA
-        0xaabbccddeeff, // NA
-        0x4d3a99c351dd, // NA
-        0x1a982c7e459a, // NA
-        0xd3f7d3f7d3f7, // NA
-        0x714c5c886e97, // NA
-        0x587ee5f9350f, // NA
-        0xa0478cc39091, // NA
-        0x533cb6c723f6, // NA
-        0x8fd0a4f256e9  // NA
+        0x22729a9bd40f  // INFINEON B 0E
     };
 
     /* Can remember something like that in case of Bigbuf */
@@ -460,14 +460,14 @@ void e_MifareECardLoad(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint8_t *dat
     uint8_t numSectors = arg0;
     uint8_t keyType = arg1;
     uint64_t ui64Key = 0;
-    uint32_t cuid;
+    // uint32_t cuid;
     struct Crypto1State mpcs = {0, 0};
     struct Crypto1State *pcs;
     pcs = &mpcs;
 
     byte_t dataoutbuf[16];
     byte_t dataoutbuf2[16];
-    uint8_t uid[10];
+    // uint8_t uid[10];
 
     LED_A_ON();
     LED_B_OFF();
@@ -478,23 +478,25 @@ void e_MifareECardLoad(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint8_t *dat
     set_tracing(false);
 
     bool isOK = true;
-    if (!iso14443a_select_card(uid, NULL, &cuid, true, 0, true)) {
-        isOK = false;
-        if (MF_DBGLEVEL >= 1)
-            Dbprintf("Can't select card");
-    }
+    iso14443a_fast_select_card(cjuid, 0);
+
+    /* if (!iso14443a_select_card(uid, NULL, &cuid, true, 0, true)) {
+    isOK = false;
+    if (MF_DBGLEVEL >= 1)
+        Dbprintf("Can't select card");
+}*/
 
     for (uint8_t sectorNo = 0; isOK && sectorNo < numSectors; sectorNo++) {
         ui64Key = emlGetKey(sectorNo, keyType);
         if (sectorNo == 0) {
-            if (isOK && mifare_classic_auth(pcs, cuid, FirstBlockOfSector(sectorNo), keyType, ui64Key, AUTH_FIRST)) {
+            if (isOK && mifare_classic_auth(pcs, cjcuid, FirstBlockOfSector(sectorNo), keyType, ui64Key, AUTH_FIRST)) {
                 isOK = false;
                 if (MF_DBGLEVEL >= 1)
                     Dbprintf("Sector[%2d]. Auth error", sectorNo);
                 break;
             }
         } else {
-            if (isOK && mifare_classic_auth(pcs, cuid, FirstBlockOfSector(sectorNo), keyType, ui64Key, AUTH_NESTED)) {
+            if (isOK && mifare_classic_auth(pcs, cjcuid, FirstBlockOfSector(sectorNo), keyType, ui64Key, AUTH_NESTED)) {
                 isOK = false;
                 if (MF_DBGLEVEL >= 1)
                     Dbprintf("Sector[%2d]. Auth nested error", sectorNo);
@@ -503,7 +505,7 @@ void e_MifareECardLoad(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint8_t *dat
         }
 
         for (uint8_t blockNo = 0; isOK && blockNo < NumBlocksPerSector(sectorNo); blockNo++) {
-            if (isOK && mifare_classic_readblock(pcs, cuid, FirstBlockOfSector(sectorNo) + blockNo, dataoutbuf)) {
+            if (isOK && mifare_classic_readblock(pcs, cjcuid, FirstBlockOfSector(sectorNo) + blockNo, dataoutbuf)) {
                 isOK = false;
                 if (MF_DBGLEVEL >= 1)
                     Dbprintf("Error reading sector %2d block %2d", sectorNo, blockNo);
@@ -524,7 +526,7 @@ void e_MifareECardLoad(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint8_t *dat
         }
     }
 
-    if (mifare_classic_halt(pcs, cuid)) {
+    if (mifare_classic_halt(pcs, cjcuid)) {
         if (MF_DBGLEVEL >= 1)
             Dbprintf("Halt error");
     };
@@ -556,29 +558,33 @@ int cjat91_saMifareChkKeys(uint8_t blockNo, uint8_t keyType, bool clearTrace, ui
     // byte_t isOK = 0;
 
     for (int i = 0; i < keyCount; ++i) {
+        LEDsoff();
+
         /* no need for anticollision. just verify tag is still here */
-        if (!iso14443a_select_card(uid, NULL, &cuid, true, 0, true)) {
+        if (!iso14443a_fast_select_card(cjuid, 0)) {
+            // if (!iso14443a_select_card(uid, NULL, &cuid, true, 0, true)) {
             Dbprintf("FATAL : E_MF_LOSTTAG");
             return -1;
         }
 
         uint64_t ui64Key = bytes_to_num(datain + i * 6, 6);
-        if (mifare_classic_auth(pcs, cuid, blockNo, keyType, ui64Key, AUTH_FIRST)) {
+        if (mifare_classic_auth(pcs, cjcuid, blockNo, keyType, ui64Key, AUTH_FIRST)) {
             uint8_t dummy_answer = 0;
             ReaderTransmit(&dummy_answer, 1, NULL);
             // wait for the card to become ready again
             SpinDelayUs(AUTHENTICATION_TIMEOUT);
-
             continue;
         }
-        // isOK = 1;
+        LED_A_ON();
         crypto1_destroy(pcs);
         FpgaWriteConfWord(FPGA_MAJOR_MODE_OFF);
         *key = ui64Key;
         return i;
     }
+    LED_A_ON();
     crypto1_destroy(pcs);
     FpgaWriteConfWord(FPGA_MAJOR_MODE_OFF);
+
     return -1;
 }
 
@@ -668,13 +674,15 @@ int saMifareCSetBlock(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint8_t *data
 
         // get UID from chip
         if (workFlags & 0x01) {
-            if (!iso14443a_select_card(uid, NULL, &cuid, true, 0, true)) {
+            if (!iso14443a_fast_select_card(cjuid, 0)) {
+
+                // if (!iso14443a_select_card(uid, NULL, &cuid, true, 0, true)) {
                 if (MF_DBGLEVEL >= 1)
                     Dbprintf("Can't select card");
                 break;
             };
 
-            if (mifare_classic_halt(NULL, cuid)) {
+            if (mifare_classic_halt(NULL, cjcuid)) {
                 if (MF_DBGLEVEL >= 1)
                     Dbprintf("Halt error");
                 break;
@@ -697,13 +705,14 @@ int saMifareCSetBlock(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint8_t *data
                 break;
             };
 
-            if (mifare_classic_halt(NULL, cuid)) {
+            if (mifare_classic_halt(NULL, cjcuid)) {
                 if (MF_DBGLEVEL >= 1)
                     Dbprintf("Halt error");
                 break;
             };
         };
 
+        // chaud
         // write block
         if (workFlags & 0x02) {
             ReaderTransmitBitsPar(wupC1, 7, 0, NULL);
@@ -737,7 +746,7 @@ int saMifareCSetBlock(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint8_t *data
         };
 
         if (workFlags & 0x04) {
-            if (mifare_classic_halt(NULL, cuid)) {
+            if (mifare_classic_halt(NULL, cjcuid)) {
                 // if (MF_DBGLEVEL >= 1)
                 Dbprintf("Halt error");
                 break;

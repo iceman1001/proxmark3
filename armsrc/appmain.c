@@ -92,7 +92,7 @@ void DbpString(char *str) { DbpStringEx(str, 0); }
 
 #if 0
 void DbpIntegers(int x1, int x2, int x3) {
-	cmd_send(CMD_DEBUG_PRINT_INTEGERS,x1,x2,x3,0,0);
+    cmd_send(CMD_DEBUG_PRINT_INTEGERS,x1,x2,x3,0,0);
 }
 #endif
 void DbprintfEx(uint32_t cmd, const char *fmt, ...) {
@@ -1189,7 +1189,7 @@ void __attribute__((noreturn)) AppMain(void) {
             UsbPacketReceived(rx, sizeof(UsbCommand));
 
         // Press button for one second to enter a possible standalone mode
-        if (BUTTON_HELD(1000) > 0) {
+        if (BUTTON_HELD(4000) > 0) {
 
 /*
  * So this is the trigger to execute a standalone mod.  Generic entrypoint by following the standalone/standalone.h headerfile
