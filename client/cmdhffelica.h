@@ -25,6 +25,7 @@
 #include "iso14443crc.h"
 #include "data.h"
 #include "cmdhf.h"		// list cmd
+#include "mifare.h" //needs replacing
 
 extern int CmdHFFelica(const char *Cmd);
 extern int CmdHFFelicaList(const char *Cmd);
@@ -38,4 +39,9 @@ extern int usage_hf_felica_sniff(void);
 extern int usage_hf_fFelica_raw(void);
 
 void waitCmdFelica(uint8_t iSelect);
+
+//temp
+extern int CmdHFFelicaSimLite(const char *Cmd);
+extern int CmdHFFelicaDumpLite(const char *Cmd);
+
 #endif
