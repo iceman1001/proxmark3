@@ -19,6 +19,9 @@
 uint8_t cjuid[10];
 uint32_t cjcuid;
 
+// TODO : Implement fast read of KEYS like in RFIdea
+// als ohttp://ext.delaat.net/rp/2015-2016/p04/report.pdf
+
 // Colin's VIGIKPWN sniff/simulate/clone repeat routine for HF Mifare
 void RunMod() {
 
