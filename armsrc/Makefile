@@ -96,6 +96,7 @@ ARMSRC = fpgaloader.c \
 	parity.c \
 	usb_cdc.c \
 	cmd.c \
+	vtsend.c \
 	hf_colin.c
 	#hf_young.c
 	#	lf_samyrun.c \

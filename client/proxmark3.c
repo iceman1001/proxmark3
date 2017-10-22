@@ -63,7 +63,7 @@ struct receiver_arg {
 byte_t rx[sizeof(UsbCommand)];
 byte_t* prx = rx;
 
-#if defined(__linux__)
+//#if defined(__linux__)
 static void showBanner(void){
 	printf("\n\n");
 	printf("\e[34m██████╗ ███╗   ███╗ ████╗\e[0m     ...iceman fork\n");
@@ -76,7 +76,7 @@ static void showBanner(void){
 	printf("\nMONERO: 43mNJLpgBVaTvyZmX9ajcohpvVkaRy1kbZPm8tqAb7itZgfuYecgkRF36rXrKFUkwEGeZedPsASRxgv4HPBHvJwyJdyvQuP");
 	printf("\n\n\n");
 }
-#endif
+//#endif
 
 static bool hookUpPM3() {	
 	bool ret = false;
@@ -315,10 +315,10 @@ int main(int argc, char* argv[]) {
 		return 0;
 	}
 
-#if defined(__linux__)
+//#if defined(__linux__)
 // ascii art doesn't work well on mingw :( 
 	showBanner();  
-#endif
+//#endif
 	
 	set_my_executable_path();
 	

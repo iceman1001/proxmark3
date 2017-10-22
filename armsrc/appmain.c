@@ -88,12 +88,15 @@ void DbpStringEx(char *str, uint32_t cmd) {
     cmd_send(CMD_DEBUG_PRINT_STRING, len, cmd, 0, (byte_t *)str, len);
 }
 
+// void Dbprint(char *str) { DbpStringEx(str, 0); }
+
 void DbpString(char *str) { DbpStringEx(str, 0); }
 
 #if 0
 void DbpIntegers(int x1, int x2, int x3) {
     cmd_send(CMD_DEBUG_PRINT_INTEGERS,x1,x2,x3,0,0);
 }
+
 #endif
 void DbprintfEx(uint32_t cmd, const char *fmt, ...) {
     // should probably limit size here; oh well, let's just use a big buffer
@@ -110,6 +113,18 @@ void DbprintfEx(uint32_t cmd, const char *fmt, ...) {
 void Dbprintf(const char *fmt, ...) {
     // should probably limit size here; oh well, let's just use a big buffer
     char output_string[128] = {0x00};
+    va_list ap;
+
+    va_start(ap, fmt);
+    kvsprintf(fmt, output_string, 10, ap);
+    va_end(ap);
+
+    DbpString(output_string);
+}
+
+void Dbprintf256(const char *fmt, ...) {
+    // should probably limit size here; oh well, let's just use a big buffer
+    char output_string[256] = {0x00};
     va_list ap;
 
     va_start(ap, fmt);
@@ -1131,7 +1146,7 @@ void UsbPacketReceived(uint8_t *packet, int len) {
         break;
     }
     default:
-        Dbprintf("%s: 0x%04x", "unknown command:", c->cmd);
+        Dbprintf("%s: 0x%04x\r\n", "unknown command:", c->cmd);
         break;
     }
 }
@@ -1189,7 +1204,7 @@ void __attribute__((noreturn)) AppMain(void) {
             UsbPacketReceived(rx, sizeof(UsbCommand));
 
         // Press button for one second to enter a possible standalone mode
-        if (BUTTON_HELD(4000) > 0) {
+        if (BUTTON_HELD(400) > 0) {
 
 /*
  * So this is the trigger to execute a standalone mod.  Generic entrypoint by following the standalone/standalone.h headerfile

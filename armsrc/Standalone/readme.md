@@ -19,6 +19,10 @@ samples:
 # -DWITH_HF_YOUNG
 # -DWITH_HF_MATTYRUN
 
+# -DWITH_HF_COLIN
+
+KIGIV, the reverse VIGIK.
+
 ## Adding identification of your mod
 Do please add a identification string in the function `printStandAloneModes` inside `armsrc\appmain.c`
 This will enable an easy way to detect on client side which standalone mods has been installed on the device.
