@@ -10,7 +10,7 @@ The VT100
 ==============
 * Is being implemented.
 
-[![asciicast](https://asciinema.org/a/XZcD7DIzuKmq3vI3BuaQDdIvk.png)](https://asciinema.org/a/XZcD7DIzuKmq3vI3BuaQDdIvk)
+[![asciicast](https://asciinema.org/a/w4qyQSa2VNslfTr32fi6o5Zt7.png)](https://asciinema.org/a/w4qyQSa2VNslfTr32fi6o5Zt7)
 
 The WTF
 ===============

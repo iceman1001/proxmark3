@@ -60,7 +60,7 @@ void cjSetCursFRight() {
 
     // static int currline = 0;
     // vtsend_cursor_forward(NULL, 50);
-    vtsend_cursor_position(NULL, 100, (currfline));
+    vtsend_cursor_position(NULL, 98, (currfline));
     currfline++;
 }
 
@@ -70,7 +70,7 @@ void cjSetCursRight() {
 
     // static int currline = 0;
     // vtsend_cursor_forward(NULL, 50);
-    vtsend_cursor_position(NULL, 70, (currline));
+    vtsend_cursor_position(NULL, 59, (currline));
     currline++;
 }
 
@@ -89,7 +89,7 @@ void cjTabulize() { DbprintfEx(FLAG_RAWPRINT, "\t\t\t"); }
 void RunMod() {
     currline = 20;
     curlline = 20;
-    currfline = 20;
+    currfline = 24;
     memset(cjuid, 0, sizeof(cjuid));
     cjcuid = 0;
     FpgaDownloadAndGo(FPGA_BITSTREAM_HF);
@@ -187,11 +187,16 @@ banner:
 failtag:
     currline = 20;
     curlline = 20;
-    currfline = 20;
+    currfline = 24;
     // vtsend_draw_box(NULL, 0, 20, 20, 40);
     cjSetCursLeft();
 
+    vtsend_cursor_position_save(NULL);
+    vtsend_set_attribute(NULL, 1);
+    vtsend_set_attribute(NULL, 5);
     DbprintfEx(FLAG_NOLOG, "\t\t\t[ Waiting For Tag ]");
+    vtsend_set_attribute(NULL, 0);
+
     iso14443a_setup(FPGA_HF_ISO14443A_READER_LISTEN);
     while (!iso14443a_select_card(cjuid, NULL, &cjcuid, true, 0, true)) {
         WDT_HIT();
@@ -199,12 +204,16 @@ failtag:
     FpgaWriteConfWord(FPGA_MAJOR_MODE_OFF);
     // SpinDelay(100);
     SpinDelay(200);
+    vtsend_cursor_position_restore(NULL);
+    DbprintfEx(FLAG_NOLOG, "\t\t\t%s[   GOT a Tag !   ]%s", _GREEN_, _WHITE_);
+    cjSetCursLeft();
+    DbprintfEx(FLAG_NOLOG, "\t\t\t       `---> Breaking keys ---->");
 
     // DbprintfEx(FLAG_RAWPRINT,"Got tag : %02x%02x%02x%02x", at91stdio_explode(cjuid, &cjcuid));
     // DbprintfEx(FLAG_RAWPRINT, "GOT TAG : %02x%02x%02x%02x\n", cjuid[0], cjuid[1], cjuid[2], cjuid[3]);
     cjSetCursRight();
 
-    DbprintfEx(FLAG_NOLOG, "GOT TAG : %08x", cjcuid);
+    DbprintfEx(FLAG_NOLOG, "\t%sGOT TAG :%s %08x%s", _RED_, _CYAN_, cjcuid, _WHITE_);
 
     if (cjcuid == 0) {
         cjSetCursLeft();
@@ -508,7 +517,8 @@ failtag:
         // cmd_send(CMD_CJB_FSMSTATE_MENU, 0, 0, 0, 0, 0);
         cjSetCursLeft();
         cjTabulize();
-        DbprintfEx(FLAG_NOLOG, "%s>> FAIL : did not found all the keys :'(%s", _RED_, _WHITE_);
+        DbprintfEx(FLAG_NOLOG, "%s[ FAIL ]%s\r\n->did not found all the keys :'(", _RED_, _WHITE_);
+        cjSetCursLeft();
         return;
     }
 
@@ -569,8 +579,14 @@ failtag:
 
     cjTabulize();
 
-    DbprintfEx(FLAG_NOLOG, "[SimulaWaiting...]");
+    vtsend_cursor_position_save(NULL);
+    vtsend_set_attribute(NULL, 1);
+    vtsend_set_attribute(NULL, 5);
+    DbprintfEx(FLAG_NOLOG, "[    SIMULATION   ]");
+    vtsend_set_attribute(NULL, 0);
     Mifare1ksim(0, 0, 0, NULL);
+    vtsend_cursor_position_restore(NULL);
+    DbprintfEx(FLAG_NOLOG, "[   SIMUL ENDED   ]%s", _GREEN_, _WHITE_);
     cjSetCursLeft();
 
     DbprintfEx(FLAG_NOLOG, "<- We're out of Emulation");
@@ -591,6 +607,8 @@ failtag:
     DbprintfEx(FLAG_NOLOG, "-> Trying a clone !");
     saMifareMakeTag();
     cjSetCursLeft();
+    vtsend_cursor_position_restore(NULL);
+    DbprintfEx(FLAG_NOLOG, "%s[ CLONED? ]", _CYAN_);
 
     DbprintfEx(FLAG_NOLOG, "-> End Cloning.");
     WDT_HIT();
@@ -606,9 +624,11 @@ failtag:
     // SpinDelay(300);
     cjSetCursLeft();
     cjTabulize();
-
-    DbprintfEx(FLAG_NOLOG, "[EOSf_tandalone]\r\n-> You can take shell back :) ...");
+    vtsend_set_attribute(NULL, 0);
+    vtsend_set_attribute(NULL, 7);
+    DbprintfEx(FLAG_NOLOG, "- [ LA FIN ] -\r\n%s`-> You can take shell back :) ...", _WHITE_);
     cjSetCursLeft();
+    vtsend_set_attribute(NULL, 0);
 
     return;
 }
@@ -756,7 +776,10 @@ void saMifareMakeTag(void) {
     // uint8_t cfail = 0;`
     cjSetCursLeft();
     cjTabulize();
-    DbprintfEx(FLAG_NOLOG, "[Cloning...]");
+    vtsend_cursor_position_save(NULL);
+    vtsend_set_attribute(NULL, 1);
+    DbprintfEx(FLAG_NOLOG, "[ CLONING ]");
+    vtsend_set_attribute(NULL, 0);
 
     cjSetCursFRight();
 
@@ -782,15 +805,22 @@ void saMifareMakeTag(void) {
         if (saMifareCSetBlock(0, flags & 0xFE, blockNum, mblock)) { //&& cnt <= retry) {
                                                                     // cnt++;
             cjSetCursFRight();
+            if (currfline > 53) {
+                currfline = 54;
+            }
             DbprintfEx(FLAG_NOLOG, "Block :%02x %sOK%s", blockNum, _GREEN_, _WHITE_);
             //                                                      DbprintfEx(FLAG_RAWPRINT,"FATAL:E_MF_CHINESECOOK_NORICE");
             //                                                      cfail=1;
             // return;
             continue;
         } else {
-            cjSetCursFRight();
+            cjSetCursLeft();
+            cjSetCursLeft();
 
-            DbprintfEx(FLAG_NOLOG, "%sFAIL%s : CHN_FAIL_BLK_%02x_NOK", _RED_, _WHITE_, blockNum);
+            DbprintfEx(FLAG_NOLOG, "`--> %sFAIL%s : CHN_FAIL_BLK_%02x_NOK", _RED_, _WHITE_, blockNum);
+            cjSetCursFRight();
+            DbprintfEx(FLAG_NOLOG, "%s>>>>%s STOP AT %02x", _RED_, _WHITE_, blockNum);
+
             break;
         }
         cjSetCursFRight();
@@ -924,6 +954,8 @@ int saMifareCSetBlock(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint8_t *data
         if (workFlags & 0x04) {
             if (mifare_classic_halt(NULL, cjcuid)) {
                 // if (MF_DBGLEVEL >= 1)
+                cjSetCursFRight();
+
                 DbprintfEx(FLAG_NOLOG, "Halt error");
                 break;
             };
