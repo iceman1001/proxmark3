@@ -1,10 +1,14 @@
-The Brigato fork
-===============
-* Is not for kids
+# KIGIV(c)
 
-The iceman fork
+## from Vigik "20years of (un)sercurity without a single update";
+
+What's this fork ?
 ===============
-* Is here : [(https://github.com/iceman1001/proxmark3)]
+* A wtf fork has no purpose.
+
+Is'nt it from iceman fork ?
+===============
+* Yup. aurevoir : [(https://github.com/iceman1001/proxmark3)]
 
 The VT100
 ==============
@@ -14,7 +18,10 @@ The VT100
 
 The WTF
 ===============
-* Is everywhere :
-[![WTF#1](https://img.youtube.com/vi/GFgWeonYn7s/0.jpg)](http://www.youtube.com/watch?v=GFgWeonYn7s)
-[![WTF#2](https://img.youtube.com/vi/iU9BbxGtFGY/0.jpg)](http://www.youtube.com/watch?v=iU9BbxGtFGY)
+* Is everywhere (YT LINKS these are)
+
+[![WTF#1](https://j.gifs.com/32lypn.gif)](http://www.youtube.com/watch?v=GFgWeonYn7s) 
+[![WTF#2](https://j.gifs.com/mQwYPE.gif)](http://www.youtube.com/watch?v=iU9BbxGtFGY)
+
+
 
