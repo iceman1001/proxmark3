@@ -171,10 +171,29 @@ void UsbCommandReceived(UsbCommand *UC) {
         if (UC->arg[1] == CMD_MEASURE_ANTENNA_TUNING_HF) {
             printf("\r#db# %s", s);
             fflush(stdout);
+            return;
         }
-        if (UC->arg[1] == FLAG_RAWPRINT) {
-            printf("%s", s);
-            fflush(stdout);
+        //#define FLAG_RAWPRINT 0x0111
+        //#define FLAG_NOOPT 0x0000
+        //#define FLAG_NOLOG 0x0001
+        //#define FLAG_NONEWLINE 0x0010
+        //#define FLAG_NOPROMPT 0x0100
+        uint64_t flag = UC->arg[1];
+        if (flag > 0) { // FLAG_RAWPRINT) {
+            switch (flag) {
+            case FLAG_RAWPRINT: {
+                printf("%s", s);
+            } break;
+            case FLAG_NONEWLINE: {
+                printf("%s\r", s);
+            } break;
+            case FLAG_NOLOG: {
+                printf("%s\r\n", s);
+            } break;
+                // printf("%s", s);
+                fflush(stdout);
+                return;
+            }
         } else {
             PrintAndLog("#db# %s", s);
         }

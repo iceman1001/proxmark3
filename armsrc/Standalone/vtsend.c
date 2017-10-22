@@ -44,7 +44,7 @@ int vtsend_init(vtsend_t *p, VTSEND_SERIAL_WRITE uart_write, void *extobj) {
 }
 
 int vtsend_cursor_position(vtsend_t *p, const int column, const int line) {
-    char buf[8];
+    char buf[1 + 8];
     buf[0] = ESC;
     buf[1] = '[';
     buf[2] = '0' + (line / 10);
@@ -53,127 +53,150 @@ int vtsend_cursor_position(vtsend_t *p, const int column, const int line) {
     buf[5] = '0' + (column / 10);
     buf[6] = '0' + (column % 10);
     buf[7] = 'H';
+    buf[8] = '\0';
     UART_WRITE(buf); // UART_WRITE(p, buf, sizeof(buf));
     return 0;
 }
 
 int vtsend_cursor_up(vtsend_t *p, const int n) {
-    char buf[5];
+    char buf[1 + 5];
     buf[0] = ESC;
     buf[1] = '[';
     buf[2] = '0' + (n / 10);
     buf[3] = '0' + (n % 10);
     buf[4] = 'A';
+    buf[5] = '\0';
+
     UART_WRITE(buf); // UART_WRITE(p, buf, sizeof(buf));
     return 0;
 }
 
 int vtsend_cursor_down(vtsend_t *p, const int n) {
-    char buf[5];
+    char buf[1 + 5];
     buf[0] = ESC;
     buf[1] = '[';
     buf[2] = '0' + (n / 10);
     buf[3] = '0' + (n % 10);
     buf[4] = 'B';
+    buf[5] = '\0';
+
     UART_WRITE(buf); // UART_WRITE(p, buf, sizeof(buf));
     return 0;
 }
 
 int vtsend_cursor_forward(vtsend_t *p, const int n) {
-    char buf[5];
+    char buf[1 + 5];
     buf[0] = ESC;
     buf[1] = '[';
     buf[2] = '0' + (n / 10);
     buf[3] = '0' + (n % 10);
     buf[4] = 'C';
+    buf[5] = '\0';
+
     UART_WRITE(buf); // UART_WRITE(p, buf, sizeof(buf));
     return 0;
 }
 
 int vtsend_cursor_backward(vtsend_t *p, const int n) {
-    char buf[5];
+    char buf[1 + 5];
     buf[0] = ESC;
     buf[1] = '[';
     buf[2] = '0' + (n / 10);
     buf[3] = '0' + (n % 10);
     buf[4] = 'D';
+    buf[5] = '\0';
+
     UART_WRITE(buf); // UART_WRITE(p, buf, sizeof(buf));
     return 0;
 }
 
 int vtsend_cursor_position_save(vtsend_t *p) {
-    char buf[3];
+    char buf[1 + 3];
     buf[0] = ESC;
     buf[1] = '[';
     buf[2] = 's';
+    buf[3] = '\0';
+
     UART_WRITE(buf); // UART_WRITE(p, buf, sizeof(buf));
     return 0;
 }
 
 int vtsend_cursor_position_restore(vtsend_t *p) {
-    char buf[3];
+    char buf[1 + 3];
     buf[0] = ESC;
     buf[1] = '[';
     buf[2] = 'u';
+    buf[3] = '\0';
+
     UART_WRITE(buf); // UART_WRITE(p, buf, sizeof(buf));
     return 0;
 }
 
 int vtsend_erase_display(vtsend_t *p) {
-    char buf[4];
+    char buf[1 + 4];
     buf[0] = ESC;
     buf[1] = '[';
     buf[2] = '2';
     buf[3] = 'J';
+    buf[4] = '\0';
+
     UART_WRITE(buf); // UART_WRITE(p, buf, sizeof(buf));
     return 0;
 }
 
 int vtsend_erase_line(vtsend_t *p) {
-    char buf[4];
+    char buf[1 + 4];
     buf[0] = ESC;
     buf[1] = '[';
     buf[2] = '2';
     buf[3] = 'K';
+    buf[4] = '\0';
+
     UART_WRITE(buf); // UART_WRITE(p, buf, sizeof(buf));
     return 0;
 }
 
 int vtsend_set_color_foreground(vtsend_t *p, const int color) {
-    char buf[5];
+    char buf[1 + 5];
     buf[0] = ESC;
     buf[1] = '[';
     buf[2] = '0' + ((30 + color) / 10);
     buf[3] = '0' + ((30 + color) % 10);
     buf[4] = 'm';
+    buf[5] = '\0';
+
     UART_WRITE(buf); // UART_WRITE(p, buf, sizeof(buf));
     return 0;
 }
 
 int vtsend_set_color_background(vtsend_t *p, const int color) {
-    char buf[5];
+    char buf[1 + 5];
     buf[0] = ESC;
     buf[1] = '[';
     buf[2] = '0' + ((40 + color) / 10);
     buf[3] = '0' + ((40 + color) % 10);
     buf[4] = 'm';
+    buf[5] = '\0';
+
     UART_WRITE(buf); // UART_WRITE(p, buf, sizeof(buf));
     return 0;
 }
 
 int vtsend_set_attribute(vtsend_t *p, const int attr) {
-    char buf[5];
+    char buf[1 + 5];
     buf[0] = ESC;
     buf[1] = '[';
     buf[2] = '0' + ((attr) / 10);
     buf[3] = '0' + ((attr) % 10);
     buf[4] = 'm';
+    buf[5] = '\0';
+
     UART_WRITE(buf); // UART_WRITE(p, buf, sizeof(buf));
     return 0;
 }
 
 int vtsend_set_scroll_region(vtsend_t *p, const int top, const int bottom) {
-    char buf[8];
+    char buf[1 + 8];
     buf[0] = ESC;
     buf[1] = '[';
     buf[2] = '0' + (top / 10);
@@ -182,37 +205,45 @@ int vtsend_set_scroll_region(vtsend_t *p, const int top, const int bottom) {
     buf[5] = '0' + (bottom / 10);
     buf[6] = '0' + (bottom % 10);
     buf[7] = 'r';
+    buf[8] = '\0';
+
     UART_WRITE(buf); // UART_WRITE(p, buf, sizeof(buf));
     return 0;
 }
 
 int vtsend_set_cursor(vtsend_t *p, const int visible) {
     if (visible) {
-        char buf[6];
+        char buf[1 + 6];
         buf[0] = ESC;
         buf[1] = '[';
         buf[2] = '?';
         buf[3] = '2';
         buf[4] = '5';
         buf[5] = 'h';
+        buf[6] = '\0';
+
         UART_WRITE(buf); // UART_WRITE(p, buf, sizeof(buf));
     } else {
-        char buf[6];
+        char buf[1 + 6];
         buf[0] = ESC;
         buf[1] = '[';
         buf[2] = '?';
         buf[3] = '2';
         buf[4] = '5';
         buf[5] = 'l';
+        buf[6] = '\0';
+
         UART_WRITE(buf); // UART_WRITE(p, buf, sizeof(buf));
     }
     return 0;
 }
 
 int vtsend_reset(vtsend_t *p) {
-    char buf[2];
+    char buf[1 + 2];
     buf[0] = ESC;
     buf[1] = 'c';
+    buf[2] = '\0';
+
     UART_WRITE(buf); // UART_WRITE(p, buf, sizeof(buf));
     return 0;
 }
@@ -222,17 +253,17 @@ int vtsend_draw_box(vtsend_t *p, const int x1, const int y1, const int x2, const
 
     vtsend_cursor_position(p, x1, y1);
     for (i = x1; i <= x2; i++) {
-        UART_WRITE(" ");
+        UART_WRITE("-");
     }
     vtsend_cursor_position(p, x1, y2);
     for (i = x1; i <= x2; i++) {
-        UART_WRITE(" ");
+        UART_WRITE("-");
     }
     for (i = y1; i <= y2; i++) {
         vtsend_cursor_position(p, x1, i);
-        UART_WRITE(" ");
+        UART_WRITE("|");
         vtsend_cursor_position(p, x2, i);
-        UART_WRITE(" ");
+        UART_WRITE("|");
     }
     return 0;
 }
