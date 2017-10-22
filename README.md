@@ -14,4 +14,7 @@ The VT100
 
 The WTF
 ===============
-* Is everywhere
+* Is everywhere :
+[![WTF#1](https://img.youtube.com/vi/GFgWeonYn7s/0.jpg)](http://www.youtube.com/watch?v=GFgWeonYn7s)
+[![WTF#2](https://img.youtube.com/vi/iU9BbxGtFGY/0.jpg)](http://www.youtube.com/watch?v=iU9BbxGtFGY)
+
