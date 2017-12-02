@@ -4,15 +4,16 @@ getopt = require('getopt')
 bin = require('bin')
 example = "script run dumptoemul-mfu -i dumpdata-foobar.bin"
 author = "Martin Holst Swende \n @Marshmellow \n @iceman"
-usage = "script run dumptoemul-mfu [-i <file>] [-o <file>]"
+usage = "script run dumptoemul-mfu [-i <file>] [-o <file>] [-p <num_blocks>]"
 desc =[[
 This script takes a dumpfile from 'hf mfu dump' and converts it to a format that can be used
 by the emulator
 
 Arguments:
-	-h 				This help
-	-i <file>		Specifies the dump-file (input). If omitted, 'dumpdata.bin' is used	
-	-o <filename>	Specifies the output file. If omitted, <uid>.eml is used. 	
+	-h              This help
+	-i <file>       Specifies the dump-file (input). If omitted, 'dumpdata.bin' is used	
+	-o <filename>   Specifies the output file. If omitted, <uid>.eml is used. 	
+	-p <num_blocks> Pads with zeros for <num_blocks>
 
 ]]
 --- 
@@ -68,15 +69,27 @@ local function convert_to_emulform(hexdata)
 	return string.sub(ascii, 1, -2)
 end
 
+local function zero_padding(hexdata, num_blocks)
+	local zeros = "00000000"
+	local pad,i = "";
+	pad = pad.."\n"
+	for i = 1, num_blocks, 1 do
+		pad = pad..zeros.."\n"
+	end
+	return hexdata..string.sub(pad, 1, -2)
+end
+
 local function main(args)
 
 	local input = "dumpdata.bin"
 	local output
+	local padding = 0
 
-	for o, a in getopt.getopt(args, 'i:o:h') do
+	for o, a in getopt.getopt(args, 'i:o:p:h') do
 		if o == "h" then return help() end		
 		if o == "i" then input = a end
 		if o == "o" then output = a end
+		if o == "p" then padding = a end
 	end
 	-- Validate the parameters
 	
@@ -100,6 +113,13 @@ local function main(args)
 
 	-- Format some linebreaks
 	dumpdata = convert_to_emulform(dumpdata)
+	
+	-- Zero-padding
+	if type(padding) == 'string' then padding = tonumber(padding, 10) end	
+	if padding ~= nil and padding > 0 then
+		print("Zero-padding "..padding.." blocks")
+		dumpdata = zero_padding(dumpdata, padding)
+	end
 
 	local outfile = io.open(output, "w")
 	if outfile == nil then 
