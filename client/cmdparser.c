@@ -21,7 +21,7 @@ void CmdsHelp(const command_t Commands[]) {
 	int i = 0;
 	while (Commands[i].Name) {
 		if (!offline || Commands[i].Offline)
-			PrintAndLog("%-16s %s", Commands[i].Name, Commands[i].Help);
+			PrintAndLogEx(NORMAL, "%-16s %s", Commands[i].Name, Commands[i].Help);
 		++i;
 	}
 }
@@ -37,10 +37,10 @@ int CmdsParse(const command_t Commands[], const char *Cmd) {
 		dumpCommandsRecursive(Commands, 1);
 		return 0;
 	}
-	char cmd_name[64];
+	char cmd_name[128];
 	int len = 0;
 	memset(cmd_name, 0, sizeof(cmd_name));
-	sscanf(Cmd, "%63s%n", cmd_name, &len);
+	sscanf(Cmd, "%127s%n", cmd_name, &len);
 	str_lower(cmd_name);
 	int i = 0;
 	while (Commands[i].Name && strcmp(Commands[i].Name, cmd_name))
@@ -57,7 +57,7 @@ int CmdsParse(const command_t Commands[], const char *Cmd) {
 				matches++;
 			}
 		}
-		if(matches == 1) i = last_match;
+		if (matches == 1) i = last_match;
 	}
 
 	if (Commands[i].Name) {
@@ -76,8 +76,7 @@ char pparent[512] = {0};
 char *parent = pparent;
 
 void dumpCommandsRecursive(const command_t cmds[], int markdown) {
-	if (cmds[0].Name == NULL)
-		return;
+	if (cmds[0].Name == NULL) return;
 
 	int i = 0;
 	int w_cmd = 25;
@@ -85,11 +84,11 @@ void dumpCommandsRecursive(const command_t cmds[], int markdown) {
 	// First, dump all single commands, which are not a container for 
 	// other commands
 	if (markdown) {
-		printf("|%-*s|%-*s|%s\n",w_cmd,"command",w_off,"offline","description");
-		printf("|%-*s|%-*s|%s\n",w_cmd,"-------",w_off,"-------","-----------");
+		PrintAndLogEx(NORMAL, "|%-*s|%-*s|%s\n",w_cmd,"command",w_off,"offline","description");
+		PrintAndLogEx(NORMAL, "|%-*s|%-*s|%s\n",w_cmd,"-------",w_off,"-------","-----------");
 	} else {
-		printf("%-*s|%-*s|%s\n",w_cmd,"command",w_off,"offline","description");
-		printf("%-*s|%-*s|%s\n",w_cmd,"-------",w_off,"-------","-----------");
+		PrintAndLogEx(NORMAL, "%-*s|%-*s|%s\n",w_cmd,"command",w_off,"offline","description");
+		PrintAndLogEx(NORMAL, "%-*s|%-*s|%s\n",w_cmd,"-------",w_off,"-------","-----------");
 	}
 
 	while (cmds[i].Name) {
@@ -99,19 +98,19 @@ void dumpCommandsRecursive(const command_t cmds[], int markdown) {
 		if ( cmds[i].Offline) 
 			cmd_offline = "Y";
 		if (markdown)
-		  printf("|`%s%-*s`|%-*s|`%s`\n", parent, w_cmd-(int)strlen(parent)-2, cmds[i].Name, w_off, cmd_offline, cmds[i].Help);
+		  PrintAndLogEx(NORMAL, "|`%s%-*s`|%-*s|`%s`\n", parent, w_cmd-(int)strlen(parent)-2, cmds[i].Name, w_off, cmd_offline, cmds[i].Help);
 		else
-		  printf("%s%-*s|%-*s|%s\n", parent, w_cmd-(int)strlen(parent), cmds[i].Name, w_off, cmd_offline, cmds[i].Help);
+		  PrintAndLogEx(NORMAL, "%s%-*s|%-*s|%s\n", parent, w_cmd-(int)strlen(parent), cmds[i].Name, w_off, cmd_offline, cmds[i].Help);
 		++i;
 	}
-	printf("\n\n");
+	PrintAndLogEx(NORMAL, "\n\n");
 	i = 0;
 	
 	// Then, print the categories. These will go into subsections with their own tables
 	while (cmds[i].Name) {
 		if(cmds[i].Help[0] != '{' && ++i)  continue;
 
-		printf("### %s%s\n\n %s\n\n", parent, cmds[i].Name, cmds[i].Help);
+		PrintAndLogEx(NORMAL, "### %s%s\n\n %s\n\n", parent, cmds[i].Name, cmds[i].Help);
 
 		char currentparent[512] = {0};
 		snprintf(currentparent, sizeof currentparent, "%s%s ", parent, cmds[i].Name);

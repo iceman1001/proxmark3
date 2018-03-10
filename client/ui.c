@@ -19,9 +19,85 @@ int GridOffset = 0;
 bool GridLocked = false;
 bool showDemod = true;
 
-pthread_mutex_t print_lock;
-
+pthread_mutex_t print_lock = PTHREAD_MUTEX_INITIALIZER;
 static char *logfilename = "proxmark3.log";
+void PrintAndLogOptions(char *str[][2], size_t size, size_t space)
+{
+	char buff[2000] = "Options:\n";
+	char format[2000] = "";
+	size_t counts[2] = {0, 0};
+	for(int i = 0; i < size; i++)
+		for(int j = 0 ; j < 2 ; j++)
+			if(counts[j] < strlen(str[i][j]))
+			{
+				counts[j] = strlen(str[i][j]);
+			}
+	for(int i = 0; i < size; i++)
+    {
+		for(int j = 0; j < 2; j++)
+		{
+			if(j == 0)
+			    snprintf(format, sizeof(format), "%%%us%%%us", space, counts[j]);
+            else
+                snprintf(format, sizeof(format), "%%%us%%-%us", space, counts[j]);
+			snprintf(buff + strlen(buff), sizeof(buff) - strlen(buff), format, " ", str[i][j]);		
+		}
+		if(i<size-1)
+			strncat(buff, "\n", sizeof(buff)-strlen(buff) -1);
+    }
+    PrintAndLogEx(NORMAL, buff);
+}
+void PrintAndLogEx(logLevel_t level, char *fmt, ...) {
+
+	// skip debug messages if client debugging is turned off i.e. 'DATA SETDEBUG 0' 
+	if (g_debugMode	== 0 && level == DEBUG)
+		return;
+	
+	char buffer[MAX_PRINT_BUFFER] = {0};
+	char buffer2[MAX_PRINT_BUFFER] = {0};
+	char prefix[20] = {0};
+	char *token = NULL;
+	int size = 0;
+						//   {NORMAL, SUCCESS, INFO, FAILED, WARNING, ERR, DEBUG}
+	static char *prefixes[7] = { "", "[+] ", "[=] ", "[-] ", "[!] ", "[!!] ", "[#] "};
+	
+	switch( level ) {
+		case FAILED:
+			strncpy(prefix,_RED_([-] ), sizeof(prefix)-1);
+			break;
+		case DEBUG:
+			strncpy(prefix,_BLUE_([#] ), sizeof(prefix)-1);			
+			break;
+		case SUCCESS: 
+			strncpy(prefix,_GREEN_([+] ), sizeof(prefix)-1);
+			break;
+		default:
+			strncpy(prefix, prefixes[level], sizeof(prefix)-1);
+			break;
+	}
+	
+	va_list args;
+	va_start(args, fmt);
+	vsnprintf(buffer, sizeof(buffer), fmt, args);
+	va_end(args);
+
+	if(strchr(buffer, '\n'))
+	{
+		token = strtok(buffer,"\n");
+		while (token != NULL)
+		{
+			size=strlen(buffer2);
+			if(strlen(token))
+				snprintf(buffer2+size, sizeof(buffer2)-size, "%s%s\n", prefix, token);
+			else
+				snprintf(buffer2+size, sizeof(buffer2)-size, "\n");
+			token = strtok(NULL, "\n");
+		}
+		PrintAndLog(buffer2);
+	}
+	else
+		PrintAndLog(buffer);
+}
 
 void PrintAndLog(char *fmt, ...) {
 	char *saved_line;
@@ -164,8 +240,7 @@ void iceSimple_Filter(int *data, const size_t len, uint8_t k){
 	}
 }
 
-float complex cexpf (float complex Z)
-{
+float complex cexpf (float complex Z) {
   float complex  Res;
   double rho = exp (__real__ Z);
   __real__ Res = rho * cosf(__imag__ Z);

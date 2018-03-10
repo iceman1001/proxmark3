@@ -2,6 +2,9 @@
 -- Have a look there for further details
 getopt = require('getopt')
 bin = require('bin')
+
+copyright = ''
+version = ''
 example = "script run dumptoemul-mfu -i dumpdata-foobar.bin"
 author = "Martin Holst Swende \n @Marshmellow \n @iceman"
 usage = "script run dumptoemul-mfu [-i <file>] [-o <file>]"
@@ -15,19 +18,29 @@ Arguments:
 	-o <filename>	Specifies the output file. If omitted, <uid>.eml is used. 	
 
 ]]
+local DEBUG = false
+
 --- 
 -- A debug printout-function
-function dbg(args)
-	if DEBUG then
-		print("###", args)
+local function dbg(args)
+	if not DEBUG then return end
+	
+	if type(args) == 'table' then
+		local i = 1
+		while result[i] do
+			dbg(result[i])
+			i = i+1
+		end
+	else
+		print('###', args)
 	end
 end 
 --- 
 -- This is only meant to be used when errors occur
-function oops(err)
-	print("ERROR: ",err)
+local function oops(err)
+	print('ERROR: ',err)
+	return nil,err
 end
-
 --- 
 -- Usage help
 function help()

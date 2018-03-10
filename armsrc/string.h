@@ -22,6 +22,6 @@ void memxor(uint8_t * dest, uint8_t * src, size_t len);
 char *strncat(char *dest, const char *src, unsigned int n);
 char *strcat(char *dest, const char *src);
 void strreverse(char s[]);
-//void itoa(int n, char s[]);
+void itoa(int n, char s[]);
 
 #endif /* __STRING_H */

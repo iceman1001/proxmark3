@@ -4,6 +4,11 @@
 # the license.
 #-----------------------------------------------------------------------------
 
+# reveng will compile without macros, but these may be useful:
+# Add -DBMPMACRO to use bitmap size constant macros (edit config.h)
+# Add -DNOFORCE  to disable the -F switch
+# Add -DPRESETS  to compile with preset models (edit config.h)
+
 CC = gcc
 CXX = g++
 LD = g++
@@ -11,9 +16,6 @@ TAR = tar
 TARFLAGS = -C .. --ignore-failed-read -rvf
 RM = rm -f
 MV = mv
-
-# uncomment to enable EMV
-#CFLAGS += -DWITH_EMV
 
 ENV_LDFLAGS := $(LDFLAGS)
 ENV_CFLAGS := $(CFLAGS)
@@ -24,7 +26,8 @@ OBJDIR = obj
 LDLIBS = -L/opt/local/lib -L/usr/local/lib -lreadline -lpthread -lm
 LUALIB = ../liblua/liblua.a
 LDFLAGS = $(ENV_LDFLAGS)
-CFLAGS = $(ENV_CFLAGS) -std=c99 -D_ISOC99_SOURCE -I. -I../include -I../common -I../zlib -I../uart -I/opt/local/include -I../liblua -Wall -g -O3
+INCLUDES_CLIENT = -I. -I../include -I../common -I../common/polarssl -I../zlib -I../uart -I/opt/local/include -I../liblua
+CFLAGS = $(ENV_CFLAGS) -std=c99 -D_ISOC99_SOURCE -DPRESETS $(INCLUDES_CLIENT) -Wall -g -O3
 CXXFLAGS = -I../include -Wall -O3
 
 LUAPLATFORM = generic
@@ -90,13 +93,18 @@ CORESRCS =  uart_posix.c \
 			util_posix.c \
 			scandir.c
 
-
 CMDSRCS =	crapto1/crapto1.c \
 			crapto1/crypto1.c \
 			mfkey.c \
+			tea.c \
+			polarssl/des.c \
+			polarssl/aes.c \
+			polarssl/bignum.c \
+			polarssl/rsa.c \
+			polarssl/sha1.c \
+			polarssl/sha256.c \
 			loclass/cipher.c \
 			loclass/cipherutils.c \
-			loclass/des.c \
 			loclass/ikeys.c \
 			loclass/hash1_brute.c \
 			loclass/elite_crack.c \
@@ -107,15 +115,33 @@ CMDSRCS =	crapto1/crapto1.c \
 			crc.c \
 			crc16.c \
 			crc64.c \
-			iso14443crc.c \
 			legic_prng.c \
 			iso15693tools.c \
+			prng.c \
 			data.c \
 			graph.c \
 			cmddata.c \
 			lfdemod.c \
+			emv/crypto_polarssl.c\
+			emv/crypto.c\
+			emv/emv_pk.c\
+			emv/emv_pki.c\
+			emv/emv_pki_priv.c\
+			emv/test/cryptotest.c\
+			emv/apduinfo.c \
+			emv/dump.c \
+			emv/tlv.c \
+			emv/emv_tags.c \
+			emv/dol.c \
+			emv/emvcore.c \
+			emv/test/crypto_test.c\
+			emv/test/sda_test.c\
+			emv/test/dda_test.c\
+			emv/test/cda_test.c\
+			emv/cmdemv.c \
 			cmdanalyse.c \
 			cmdhf.c \
+			cmdhflist.c \
 			cmdhf14a.c \
 			cmdhf14b.c \
 			cmdhf15.c \
@@ -128,7 +154,6 @@ CMDSRCS =	crapto1/crapto1.c \
             hardnested/hardnested_bruteforce.c \
 			cmdhfmfdes.c \
 			cmdhftopaz.c \
-			cmdhfemv.c \
 			cmdhffelica.c \
 			cmdhw.c \
 			cmdlf.c \
@@ -161,10 +186,7 @@ CMDSRCS =	crapto1/crapto1.c \
 			scripting.c \
 			cmdscript.c \
 			pm3_bitlib.c \
-			aes.c \
 			protocols.c \
-			sha1.c \
-			sha256.c \
 			cmdcrc.c \
 			reveng/preset.c \
 			reveng/reveng.c \
@@ -173,10 +195,7 @@ CMDSRCS =	crapto1/crapto1.c \
 			reveng/model.c \
 			reveng/poly.c \
 			reveng/getopt.c \
-			tea.c \
-			prng.c \
 			bucketsort.c
-#			radixsort.c \
 
 cpu_arch = $(shell uname -m)
 ifneq ($(findstring 86, $(cpu_arch)), )
@@ -204,15 +223,7 @@ MULTIARCHOBJS = $(MULTIARCHSRCS:%.c=$(OBJDIR)/%_NOSIMD.o) \
 			$(MULTIARCHSRCS:%.c=$(OBJDIR)/%_AVX.o) \
 			$(MULTIARCHSRCS:%.c=$(OBJDIR)/%_AVX2.o)
 
-#GCC_GTEQ_490 := $(shell expr `gcc --version | awk '/gcc/{print $$NF;}' | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/'` \>= 40900)
-GCC_VERSION := $(shell gcc --version | awk '/gcc/{print $$NF;}' | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/')
-CLANG_VERSION := $(shell gcc --version | awk '/Apple LLVM version/{print $$4;}' | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/')
-ifneq ($(CLANG_VERSION), )
-	SUPPORTS_AVX512 :=  $(shell [ $(CLANG_VERSION) -ge 80000 ] && echo "True" )
-endif
-ifneq ($(GCC_VERSION), )
-	SUPPORTS_AVX512 :=  $(shell [ $(GCC_VERSION) -ge 40900 ] && echo "True" )
-endif
+SUPPORTS_AVX512 :=  $(shell echo | gcc -E -mavx512f - > /dev/null 2>&1 && echo "True" )
 
 HARD_SWITCH_NOSIMD = -mno-mmx -mno-sse2 -mno-avx -mno-avx2
 HARD_SWITCH_MMX = -mmmx -mno-sse2 -mno-avx -mno-avx2
@@ -228,7 +239,7 @@ ifeq "$(SUPPORTS_AVX512)" "True"
 	HARD_SWITCH_AVX2 += -mno-avx512f
 	MULTIARCHOBJS +=  $(MULTIARCHSRCS:%.c=$(OBJDIR)/%_AVX512.o)
 endif
-			
+
 BINS = proxmark3 flasher fpga_compress
 WINBINS = $(patsubst %, %.exe, $(BINS))
 CLEAN = $(BINS) $(WINBINS) $(COREOBJS) $(CMDOBJS) $(ZLIBOBJS) $(QTGUIOBJS) $(MULTIARCHOBJS) $(OBJDIR)/*.o *.moc.cpp ui/ui_overlays.h lualibs/usb_cmd.lua lualibs/mf_default_keys.lua
@@ -307,7 +318,6 @@ $(OBJDIR)/%.o : %.cpp $(OBJDIR)/%.d
 	$(CXX) $(DEPFLAGS) $(CXXFLAGS) $(QTINCLUDES) -c -o $@ $<
 	$(POSTCOMPILE)
 
-
 #$(CMDOBJS) $(COREOBJS): $(notdir $(%.c)) %.d
 #	$(CC) $(DEPFLAGS) $(CFLAGS) -c -o $@ $<
 #	$(POSTCOMPILE)
@@ -328,3 +338,4 @@ $(DEPENDENCY_FILES): ;
 .PRECIOUS: $(DEPENDENCY_FILES)
 
 -include $(DEPENDENCY_FILES)
+

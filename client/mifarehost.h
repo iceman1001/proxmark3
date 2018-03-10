@@ -23,11 +23,13 @@
 #include "data.h"
 #include "util.h"
 #include "crapto1/crapto1.h"
-#include "iso14443crc.h"
+#include "crc16.h"
 #include "protocols.h"
 #include "mifare.h"
+#include "mfkey.h"
+#include "util_posix.h"  // msclock
 
-#define NESTED_SECTOR_RETRY     10
+#define MIFARE_SECTOR_RETRY     10
 
 // mifare tracer flags
 #define TRACE_IDLE		 		0x00
@@ -67,14 +69,16 @@ typedef struct {
 	//uint8_t foundKey[2];
 } icesector_t;
 
- 
-
 extern char logHexFileName[FILE_PATH_SIZE];
 
 extern int mfDarkside(uint8_t blockno, uint8_t key_type, uint64_t *key);
 extern int mfnested(uint8_t blockNo, uint8_t keyType, uint8_t * key, uint8_t trgBlockNo, uint8_t trgKeyType, uint8_t * ResultKeys, bool calibrate);
 extern int mfCheckKeys (uint8_t blockNo, uint8_t keyType, bool clear_trace, uint8_t keycnt, uint8_t * keyBlock, uint64_t * key);
+extern int mfCheckKeys_fast( uint8_t sectorsCnt, uint8_t firstChunk, uint8_t lastChunk,
+						uint8_t strategy, uint32_t size, uint8_t *keyBlock, sector_t *e_sector);
 extern int mfKeyBrute(uint8_t blockNo, uint8_t keyType, uint8_t *key, uint64_t *resultkey);
+
+
 
 extern int mfEmlGetMem(uint8_t *data, int blockNum, int blocksCount);
 extern int mfEmlSetMem(uint8_t *data, int blockNum, int blocksCount);
@@ -94,5 +98,8 @@ extern int loadTraceCard(uint8_t *tuid, uint8_t uidlen);
 extern int saveTraceCard(void);
 extern int tryDecryptWord(uint32_t nt, uint32_t ar_enc, uint32_t at_enc, uint8_t *data, int len);
 
-extern bool detect_classic_prng();
+extern int detect_classic_prng(void);
+extern int detect_classic_nackbug(bool verbose);
+extern void detect_classic_magic(void);
+extern void mf_crypto1_decrypt(struct Crypto1State *pcs, uint8_t *data, int len, bool isEncrypted);
 #endif

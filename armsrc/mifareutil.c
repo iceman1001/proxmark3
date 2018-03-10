@@ -10,24 +10,28 @@
 //-----------------------------------------------------------------------------
 #include "mifareutil.h"
 
-int MF_DBGLEVEL = MF_DBG_ALL;
+int MF_DBGLEVEL = MF_DBG_ERROR;
 
 // crypto1 helpers
-void mf_crypto1_decrypt(struct Crypto1State *pcs, uint8_t *data, int len){
+void mf_crypto1_decryptEx(struct Crypto1State *pcs, uint8_t *data_in, int len, uint8_t *data_out){
 	uint8_t	bt = 0;
 	int i;
 	
 	if (len != 1) {
 		for (i = 0; i < len; i++)
-			data[i] = crypto1_byte(pcs, 0x00, 0) ^ data[i];
+			data_out[i] = crypto1_byte(pcs, 0x00, 0) ^ data_in[i];
 	} else {
-		bt |= (crypto1_bit(pcs, 0, 0) ^ BIT(data[0], 0)) << 0;
-		bt |= (crypto1_bit(pcs, 0, 0) ^ BIT(data[0], 1)) << 1;
-		bt |= (crypto1_bit(pcs, 0, 0) ^ BIT(data[0], 2)) << 2;
-		bt |= (crypto1_bit(pcs, 0, 0) ^ BIT(data[0], 3)) << 3;
-		data[0] = bt;
+		bt |= (crypto1_bit(pcs, 0, 0) ^ BIT(data_in[0], 0)) << 0;
+		bt |= (crypto1_bit(pcs, 0, 0) ^ BIT(data_in[0], 1)) << 1;
+		bt |= (crypto1_bit(pcs, 0, 0) ^ BIT(data_in[0], 2)) << 2;
+		bt |= (crypto1_bit(pcs, 0, 0) ^ BIT(data_in[0], 3)) << 3;
+		data_out[0] = bt;
 	}
 	return;
+}
+
+void mf_crypto1_decrypt(struct Crypto1State *pcs, uint8_t *data, int len){
+	mf_crypto1_decryptEx(pcs, data, len, data);
 }
 
 void mf_crypto1_encrypt(struct Crypto1State *pcs, uint8_t *data, uint16_t len, uint8_t *par) {
@@ -58,12 +62,11 @@ int mifare_sendcmd(uint8_t cmd, uint8_t* data, uint8_t data_size, uint8_t* answe
 	uint8_t dcmd[data_size+3];
     dcmd[0] = cmd;
 	memcpy(dcmd+1, data, data_size);
-	AppendCrc14443a(dcmd, data_size+1);
+	AddCrc14A(dcmd, data_size+1);
 	ReaderTransmit(dcmd, sizeof(dcmd), timing);
 	int len = ReaderReceive(answer, answer_parity);
 	if(!len) {
-		if (MF_DBGLEVEL >= MF_DBG_ERROR)
-			Dbprintf("%02X Cmd failed. Card timeout.", cmd);
+		if (MF_DBGLEVEL >= MF_DBG_ERROR) Dbprintf("%02X Cmd failed. Card timeout.", cmd);
 		len = ReaderReceive(answer,answer_parity);
     }
 	return len;
@@ -75,7 +78,7 @@ int mifare_sendcmd_short(struct Crypto1State *pcs, uint8_t crypted, uint8_t cmd,
 	uint8_t dcmd[4] = {cmd, data, 0x00, 0x00};
 	uint8_t	ecmd[4] = {0x00, 0x00, 0x00, 0x00};
 	uint8_t par[1] = {0x00};			// 1 Byte parity is enough here
-	AppendCrc14443a(dcmd, 2);
+	AddCrc14A(dcmd, 2);
 	memcpy(ecmd, dcmd, sizeof(dcmd));
 	
 	if (crypted) {
@@ -116,20 +119,15 @@ int mifare_classic_auth(struct Crypto1State *pcs, uint32_t uid, uint8_t blockNo,
 
 int mifare_classic_authex(struct Crypto1State *pcs, uint32_t uid, uint8_t blockNo, uint8_t keyType, uint64_t ui64Key, uint8_t isNested, uint32_t *ntptr, uint32_t *timing) {
 	int len;	
-	uint32_t pos;
+	uint32_t pos, nt, ntpp; // Supplied tag nonce
 	uint8_t par[1] = {0x00};
-
-	// "random" reader nonce:
-	//byte_t nr[4] = {0x55, 0x41, 0x49, 0x92};
-	fast_prand();
-	byte_t nr[4];
-	num_to_bytes(prand(), 4, nr);
-	
-	uint32_t nt, ntpp; // Supplied tag nonce
-	
+	uint8_t nr[4];
 	uint8_t mf_nr_ar[] = { 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00 };
 	uint8_t receivedAnswer[MAX_MIFARE_FRAME_SIZE] = {0x00};
 	uint8_t receivedAnswerPar[MAX_MIFARE_PARITY_SIZE] = {0x00};
+
+	// "random" reader nonce:
+	num_to_bytes( prng_successor( GetTickCount(), 32), 4, nr);
 	
 	// Transmit MIFARE_CLASSIC_AUTH
 	len = mifare_sendcmd_short(pcs, isNested, 0x60 + (keyType & 0x01), blockNo, receivedAnswer, receivedAnswerPar, timing);
@@ -154,7 +152,7 @@ int mifare_classic_authex(struct Crypto1State *pcs, uint32_t uid, uint8_t blockN
 	}
 
 	// some statistic
-	if (!ntptr && (MF_DBGLEVEL >= 3))
+	if (!ntptr && (MF_DBGLEVEL >= MF_DBG_EXTENDED))
 		Dbprintf("auth uid: %08x | nr: %08x | nt: %08x", uid, nr, nt);
 	
 	// save Nt
@@ -184,14 +182,14 @@ int mifare_classic_authex(struct Crypto1State *pcs, uint32_t uid, uint8_t blockN
 	// Receive 4 byte tag answer
 	len = ReaderReceive(receivedAnswer, receivedAnswerPar);
 	if (!len) {
-		if (MF_DBGLEVEL >= 1)	Dbprintf("Authentication failed. Card timeout.");
+		if (MF_DBGLEVEL >= MF_DBG_EXTENDED) Dbprintf("Authentication failed. Card timeout.");
 		return 2;
 	}
 
 	ntpp = prng_successor(nt, 32) ^ crypto1_word(pcs, 0,0);
 
 	if (ntpp != bytes_to_num(receivedAnswer, 4)) {
-		if (MF_DBGLEVEL >= 1)	Dbprintf("Authentication failed. Error card response.");
+		if (MF_DBGLEVEL >= MF_DBG_EXTENDED)	Dbprintf("Authentication failed. Error card response.");
 		return 3;
 	}
 	return 0;
@@ -206,18 +204,18 @@ int mifare_classic_readblock(struct Crypto1State *pcs, uint32_t uid, uint8_t blo
 	
 	len = mifare_sendcmd_short(pcs, 1, ISO14443A_CMD_READBLOCK, blockNo, receivedAnswer, receivedAnswerPar, NULL);
 	if (len == 1) {
-		if (MF_DBGLEVEL >= 1)	Dbprintf("Cmd Error: %02x", receivedAnswer[0]);  
+		if (MF_DBGLEVEL >= MF_DBG_ERROR) Dbprintf("Cmd Error: %02x", receivedAnswer[0]);  
 		return 1;
 	}
 	if (len != 18) {
-		if (MF_DBGLEVEL >= 1)	Dbprintf("Cmd Error: card timeout. len: %x", len);  
+		if (MF_DBGLEVEL >= MF_DBG_ERROR) Dbprintf("Cmd Error: wrong response len: %x  (expected 18)", len);  
 		return 2;
 	}
 
 	memcpy(bt, receivedAnswer + 16, 2);
-	AppendCrc14443a(receivedAnswer, 16);
+	AddCrc14A(receivedAnswer, 16);
 	if (bt[0] != receivedAnswer[16] || bt[1] != receivedAnswer[17]) {
-		if (MF_DBGLEVEL >= 1)	Dbprintf("Cmd CRC response error.");  
+		if (MF_DBGLEVEL >= MF_DBG_ALL) Dbprintf("Cmd CRC response error.");  
 		return 3;
 	}
 	
@@ -353,7 +351,7 @@ int mifare_ultra_readblock(uint8_t blockNo, uint8_t *blockData) {
 	}
     
 	memcpy(bt, receivedAnswer + 16, 2);
-	AppendCrc14443a(receivedAnswer, 16);
+	AddCrc14A(receivedAnswer, 16);
 	if (bt[0] != receivedAnswer[16] || bt[1] != receivedAnswer[17]) {
 		if (MF_DBGLEVEL >= MF_DBG_ERROR) Dbprintf("Cmd CRC response error.");
 		return 3;
@@ -378,12 +376,12 @@ int mifare_classic_writeblock(struct Crypto1State *pcs, uint32_t uid, uint8_t bl
 	len = mifare_sendcmd_short(pcs, 1, ISO14443A_CMD_WRITEBLOCK, blockNo, receivedAnswer, receivedAnswerPar, NULL);
 
 	if ((len != 1) || (receivedAnswer[0] != 0x0A)) {   //  0x0a - ACK
-		if (MF_DBGLEVEL >= 1)	Dbprintf("Cmd Error: %02x", receivedAnswer[0]);  
+		if (MF_DBGLEVEL >= MF_DBG_ERROR) Dbprintf("Cmd Error: %02x", receivedAnswer[0]);  
 		return 1;
 	}
 	
 	memcpy(d_block, blockData, 16);
-	AppendCrc14443a(d_block, 16);
+	AddCrc14A(d_block, 16);
 	
 	// crypto
 	for (pos = 0; pos < 18; pos++) {
@@ -403,7 +401,7 @@ int mifare_classic_writeblock(struct Crypto1State *pcs, uint32_t uid, uint8_t bl
 	res |= (crypto1_bit(pcs, 0, 0) ^ BIT(receivedAnswer[0], 3)) << 3;
 
 	if ((len != 1) || (res != 0x0A)) {
-		if (MF_DBGLEVEL >= 1)	Dbprintf("Cmd send data2 Error: %02x", res);  
+		if (MF_DBGLEVEL >= MF_DBG_ERROR) Dbprintf("Cmd send data2 Error: %02x", res);  
 		return 2;
 	}
 	return 0;
@@ -426,7 +424,7 @@ int mifare_ultra_writeblock_compat(uint8_t blockNo, uint8_t *blockData) {
     }
 
 	memcpy(d_block, blockData, 16);
-    AppendCrc14443a(d_block, 16);
+    AddCrc14A(d_block, 16);
 
 	ReaderTransmitPar(d_block, sizeof(d_block), par, NULL);
 
@@ -586,33 +584,29 @@ void emlClearMem(void) {
 
 
 // Mifare desfire commands
-int mifare_sendcmd_special(struct Crypto1State *pcs, uint8_t crypted, uint8_t cmd, uint8_t* data, uint8_t* answer, uint8_t *answer_parity, uint32_t *timing)
-{
+int mifare_sendcmd_special(struct Crypto1State *pcs, uint8_t crypted, uint8_t cmd, uint8_t* data, uint8_t* answer, uint8_t *answer_parity, uint32_t *timing) {
     uint8_t dcmd[5] = {cmd, data[0], data[1], 0x00, 0x00};
-	AppendCrc14443a(dcmd, 3);
+	AddCrc14A(dcmd, 3);
 	
 	ReaderTransmit(dcmd, sizeof(dcmd), NULL);
 	int len = ReaderReceive(answer, answer_parity);
 	if(!len) {
-		if (MF_DBGLEVEL >= MF_DBG_ERROR) 
-			Dbprintf("Authentication failed. Card timeout.");
+		if (MF_DBGLEVEL >= MF_DBG_ERROR) Dbprintf("Authentication failed. Card timeout.");
 		return 1;
     }
 	return len;
 }
 
-int mifare_sendcmd_special2(struct Crypto1State *pcs, uint8_t crypted, uint8_t cmd, uint8_t* data, uint8_t* answer,uint8_t *answer_parity, uint32_t *timing)
-{
+int mifare_sendcmd_special2(struct Crypto1State *pcs, uint8_t crypted, uint8_t cmd, uint8_t* data, uint8_t* answer,uint8_t *answer_parity, uint32_t *timing) {
     uint8_t dcmd[20] = {0x00};
     dcmd[0] = cmd;
     memcpy(dcmd+1,data,17);
-	AppendCrc14443a(dcmd, 18);
+	AddCrc14A(dcmd, 18);
 
 	ReaderTransmit(dcmd, sizeof(dcmd), NULL);
 	int len = ReaderReceive(answer, answer_parity);
 	if(!len){
-        if (MF_DBGLEVEL >= MF_DBG_ERROR)
-			Dbprintf("Authentication failed. Card timeout.");
+        if (MF_DBGLEVEL >= MF_DBG_ERROR) Dbprintf("Authentication failed. Card timeout.");
 		return 1;
     }
 	return len;

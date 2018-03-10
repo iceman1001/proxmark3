@@ -22,7 +22,7 @@
  *
  * This is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as published
- * by the Free Software Foundation.
+ * by the Free Software Foundation, or, at your option, any later version. 
  *
  * This file is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -31,7 +31,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with loclass.  If not, see <http://www.gnu.org/licenses/>.
- * 
  * 
  * 
  ****************************************************************************/
@@ -227,17 +226,17 @@ void doMAC(uint8_t *cc_nr_p, uint8_t *div_key_p, uint8_t mac[4])
     uint8_t div_key[8];
 	//cc_nr=(uint8_t*)malloc(length+1);
 
-	memcpy(cc_nr,cc_nr_p,12);
-    memcpy(div_key,div_key_p,8);
+	memcpy(cc_nr, cc_nr_p, 12);
+    memcpy(div_key, div_key_p, 8);
     
-	reverse_arraybytes(cc_nr,12);
-	BitstreamIn bitstream = {cc_nr,12 * 8,0};
+	reverse_arraybytes(cc_nr, 12);
+	BitstreamIn bitstream = {cc_nr, 12 * 8, 0};
 	uint8_t dest []= {0,0,0,0,0,0,0,0};
 	BitstreamOut out = { dest, sizeof(dest)*8, 0 };
 	MAC(div_key,bitstream, out);
 	//The output MAC must also be reversed
 	reverse_arraybytes(dest, sizeof(dest));
-	memcpy(mac,dest,4);
+	memcpy(mac, dest, 4);
 	//free(cc_nr);
     return;
 }
@@ -265,7 +264,7 @@ void doMAC_N(uint8_t *address_data_p, uint8_t address_data_size, uint8_t *div_ke
 #ifndef ON_DEVICE
 int testMAC()
 {
-	prnlog("[+] Testing MAC calculation...");
+	PrintAndLogDevice(SUCCESS, "Testing MAC calculation...");
 
 	//From the "dismantling.IClass" paper:
 	uint8_t cc_nr[] = {0xFE,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0,0,0,0};
@@ -278,11 +277,11 @@ int testMAC()
 
 	if(memcmp(calculated_mac, correct_MAC,4) == 0)
 	{
-		prnlog("[+] MAC calculation OK!");
+		PrintAndLogDevice(SUCCESS, "MAC calculation OK!");
 
 	}else
 	{
-		prnlog("[+] FAILED: MAC calculation failed:");
+		PrintAndLogDevice(FAILED, "FAILED: MAC calculation failed:");
 		printarr("    Calculated_MAC", calculated_mac, 4);
 		printarr("    Correct_MAC   ", correct_MAC, 4);
 	return 1;

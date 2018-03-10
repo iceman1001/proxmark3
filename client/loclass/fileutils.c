@@ -22,7 +22,7 @@
  *
  * This is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as published
- * by the Free Software Foundation.
+ * by the Free Software Foundation, or, at your option, any later version. 
  *
  * This file is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -31,7 +31,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with loclass.  If not, see <http://www.gnu.org/licenses/>.
- * 
  * 
  * 
  ****************************************************************************/
@@ -78,14 +77,14 @@ int saveFile(const char *preferredName, const char *suffix, const void* data, si
 	/*Opening file for writing in binary mode*/
 	FILE *f = fopen(fileName, "wb");
 	if (!f) {
-		prnlog("File not found or locked. '%s'", fileName);
+		PrintAndLogDevice(WARNING, "file not found or locked. '%s'", fileName);
 		free(fileName);
 		return 1;
 	}
 	fwrite(data, 1,	datalen, f);
 	fflush(f);
 	fclose(f);
-	prnlog("Saved %u bytes to binary file %s", datalen, fileName);
+	PrintAndLogDevice(SUCCESS, "saved %u bytes to binary file %s", datalen, fileName);
 	free(fileName);
 	return 0;
 }
@@ -114,14 +113,14 @@ int saveFileEML(const char *preferredName, const char *suffix, uint8_t* data, si
 	/*Opening file for writing in text mode*/
 	FILE *f = fopen(fileName, "w+");
 	if (!f) {
-		prnlog("File not found or locked. '%s'", fileName);
+		PrintAndLogDevice(WARNING, "file not found or locked. '%s'", fileName);
 		retval =  1;
 		goto out;
 	}
 
 	for (i = 0; i < datalen; i++) {
 		fprintf(f, "%02X", data[i] );
-		if ( (i+1) % 4 == 0)
+		if ( (i+1) % blocksize == 0)
 			fprintf(f, "\n");
 	}
 	// left overs
@@ -133,7 +132,7 @@ int saveFileEML(const char *preferredName, const char *suffix, uint8_t* data, si
 	}
 	fflush(f);
 	fclose(f);
-	prnlog("Saved %d blocks to text file %s", blocks, fileName);
+	PrintAndLogDevice(SUCCESS, "saved %d blocks to text file %s", blocks, fileName);
 	
 out:	
 	free(fileName);
@@ -148,17 +147,17 @@ out:
  * write also to a logfile. When doing so, just delete this function.
  * @param fmt
  */
-void prnlog(char *fmt, ...)
+void PrintAndLogDevice(logLevel_t level, char *fmt, ...)
 {
 	char buffer[2048] = {0};
 	va_list args;
-	va_start(args,fmt);
-	vsprintf (buffer,fmt, args);
+	va_start(args, fmt);
+	vsnprintf(buffer, sizeof(buffer), fmt, args);
 	va_end(args);
-	PrintAndLog(buffer);
+	PrintAndLogEx(level, buffer);
 }
 #else //if we're on ARM
-void prnlog(char *fmt,...)
+void PrintAndLogDevice(logLevel_t level, char *fmt,...)
 {
 	return;
 }

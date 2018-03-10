@@ -89,4 +89,42 @@ typedef struct {
 	} state;
 } nonces_t;
 
+//-----------------------------------------------------------------------------
+// FeliCa
+//-----------------------------------------------------------------------------
+// IDm  = ID manufacturer
+// mc = manufactureCode
+// mc1 mc2 u1 u2 u3 u4 u5 u6
+// PMm  = Product manufacturer
+// icCode = 
+//		ic1 = ROM
+//		ic2 = IC
+// maximum response time =
+//		B3(request service)
+//		B4(request response)
+//		B5(authenticate)
+//		B6(read)
+//		B7(write)
+//		B8()	
+
+// ServiceCode  2bytes  (access-rights)
+// FileSystem = 1 Block = 16 bytes
+typedef struct {
+	uint8_t IDm[8];
+	uint8_t code[2];
+	uint8_t uid[6];
+	uint8_t PMm[8];
+	uint8_t iccode[2];
+	uint8_t mrt[6];
+	uint8_t servicecode[2];	
+} __attribute__((__packed__)) felica_card_select_t;
+
+typedef enum FELICA_COMMAND {
+	FELICA_CONNECT = 			(1 << 0),
+	FELICA_NO_DISCONNECT =		(1 << 1),
+	FELICA_RAW =				(1 << 3),
+	FELICA_APPEND_CRC =			(1 << 5),
+	FELICA_NO_SELECT =			(1 << 6),
+} felica_command_t;
+
 #endif // _MIFARE_H_

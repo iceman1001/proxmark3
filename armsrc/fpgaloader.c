@@ -33,7 +33,25 @@ static const uint8_t _bitparse_fixed_header[] = {0x00, 0x09, 0x0f, 0xf0, 0x0f, 0
 // Used to write the FPGA config word
 // May also be used to write to other SPI attached devices like an LCD
 //-----------------------------------------------------------------------------
+static void DisableSpi(void) {		
+	//* Reset all the Chip Select register
+    AT91C_BASE_SPI->SPI_CSR[0] = 0;
+    AT91C_BASE_SPI->SPI_CSR[1] = 0;
+    AT91C_BASE_SPI->SPI_CSR[2] = 0;
+    AT91C_BASE_SPI->SPI_CSR[3] = 0;
+
+    // Reset the SPI mode
+    AT91C_BASE_SPI->SPI_MR = 0;
+
+    // Disable all interrupts
+    AT91C_BASE_SPI->SPI_IDR = 0xFFFFFFFF;
+	
+	// SPI disable
+	AT91C_BASE_SPI->SPI_CR = AT91C_SPI_SPIDIS;
+}
+
 void SetupSpi(int mode) {
+	// PA1	-> SPI_NCS3 chip select (MEM)
 	// PA10 -> SPI_NCS2 chip select (LCD)
 	// PA11 -> SPI_NCS0 chip select (FPGA)
 	// PA12 -> SPI_MISO Master-In Slave-Out
@@ -43,63 +61,68 @@ void SetupSpi(int mode) {
 	// Disable PIO control of the following pins, allows use by the SPI peripheral
 	AT91C_BASE_PIOA->PIO_PDR =
 		GPIO_NCS0	|
-		GPIO_NCS2 	|
 		GPIO_MISO	|
 		GPIO_MOSI	|
 		GPIO_SPCK;
 
+	// Peripheral A
 	AT91C_BASE_PIOA->PIO_ASR =
 		GPIO_NCS0	|
 		GPIO_MISO	|
 		GPIO_MOSI	|
 		GPIO_SPCK;
 
-	AT91C_BASE_PIOA->PIO_BSR = GPIO_NCS2;
+	// Peripheral B
+	//AT91C_BASE_PIOA->PIO_BSR |= GPIO_NCS2;
 
 	//enable the SPI Peripheral clock
-	AT91C_BASE_PMC->PMC_PCER = (1<<AT91C_ID_SPI);
+	AT91C_BASE_PMC->PMC_PCER = (1 << AT91C_ID_SPI);
 	// Enable SPI
 	AT91C_BASE_SPI->SPI_CR = AT91C_SPI_SPIEN;
 
 	switch (mode) {
 		case SPI_FPGA_MODE:
 			AT91C_BASE_SPI->SPI_MR =
-				( 0 << 24)	|	// Delay between chip selects (take default: 6 MCK periods)
-				(14 << 16)	|	// Peripheral Chip Select (selects FPGA SPI_NCS0 or PA11)
-				( 0 << 7)	|	// Local Loopback Disabled
-				( 1 << 4)	|	// Mode Fault Detection disabled
-				( 0 << 2)	|	// Chip selects connected directly to peripheral
-				( 0 << 1) 	|	// Fixed Peripheral Select
-				( 1 << 0);		// Master Mode
+				( 0 << 24)			|	// Delay between chip selects (take default: 6 MCK periods)
+				(0xE << 16)			|	// Peripheral Chip Select (selects FPGA SPI_NCS0 or PA11)
+				( 0 << 7)			|	// Local Loopback Disabled
+				AT91C_SPI_MODFDIS 	|	// Mode Fault Detection disabled
+				( 0 << 2)			|	// Chip selects connected directly to peripheral
+				AT91C_SPI_PS_FIXED	|	// Fixed Peripheral Select
+				AT91C_SPI_MSTR;		// Master Mode
+				
 			AT91C_BASE_SPI->SPI_CSR[0] =
 				( 1 << 24)	|	// Delay between Consecutive Transfers (32 MCK periods)
 				( 1 << 16)	|	// Delay Before SPCK (1 MCK period)
 				( 6 << 8)	|	// Serial Clock Baud Rate (baudrate = MCK/6 = 24Mhz/6 = 4M baud
-				( 8 << 4)	|	// Bits per Transfer (16 bits)
+				AT91C_SPI_BITS_16 |	// Bits per Transfer (16 bits)
 				( 0 << 3)	|	// Chip Select inactive after transfer
-				( 1 << 1)	|	// Clock Phase data captured on leading edge, changes on following edge
+				AT91C_SPI_NCPHA	|	// Clock Phase data captured on leading edge, changes on following edge
 				( 0 << 0);		// Clock Polarity inactive state is logic 0
 			break;
-		case SPI_LCD_MODE:
+/*
+			case SPI_LCD_MODE:
 			AT91C_BASE_SPI->SPI_MR =
 				( 0 << 24)	|	// Delay between chip selects (take default: 6 MCK periods)
-				(11 << 16)	|	// Peripheral Chip Select (selects LCD SPI_NCS2 or PA10)
+				(0xB << 16)	|	// Peripheral Chip Select (selects LCD SPI_NCS2 or PA10)
 				( 0 << 7)	|	// Local Loopback Disabled
 				( 1 << 4)	|	// Mode Fault Detection disabled
 				( 0 << 2)	|	// Chip selects connected directly to peripheral
 				( 0 << 1) 	|	// Fixed Peripheral Select
 				( 1 << 0);		// Master Mode
+				
 			AT91C_BASE_SPI->SPI_CSR[2] =
 				( 1 << 24)	|	// Delay between Consecutive Transfers (32 MCK periods)
 				( 1 << 16)	|	// Delay Before SPCK (1 MCK period)
 				( 6 << 8)	|	// Serial Clock Baud Rate (baudrate = MCK/6 = 24Mhz/6 = 4M baud
-				( 1 << 4)	|	// Bits per Transfer (9 bits)
+				AT91C_SPI_BITS_9 |	// Bits per Transfer (9 bits)
 				( 0 << 3)	|	// Chip Select inactive after transfer
 				( 1 << 1)	|	// Clock Phase data captured on leading edge, changes on following edge
 				( 0 << 0);		// Clock Polarity inactive state is logic 0
 			break;
-		default:				// Disable SPI
-			AT91C_BASE_SPI->SPI_CR = AT91C_SPI_SPIDIS;
+*/			
+		default:
+			DisableSpi();		
 			break;
 	}
 }
@@ -124,7 +147,7 @@ void FpgaSetupSscExt(uint8_t clearPCER) {
 
 	// Now set up the SSC proper, starting from a known state.
 	AT91C_BASE_SSC->SSC_CR = AT91C_SSC_SWRST;
-
+	
 	// RX clock comes from TX clock, RX starts when TX starts, data changes
 	// on RX clock rising edge, sampled on falling edge
 	AT91C_BASE_SSC->SSC_RCMR = SSC_CLOCK_MODE_SELECT(1) | SSC_CLOCK_MODE_START(1);
@@ -154,13 +177,13 @@ void FpgaSetupSsc(void) {
 bool FpgaSetupSscDma(uint8_t *buf, int len) {
 	if (buf == NULL) return false;
 
-	AT91C_BASE_PDC_SSC->PDC_PTCR = AT91C_PDC_RXTDIS;	// Disable DMA Transfer
+	FpgaDisableSscDma();
 	AT91C_BASE_PDC_SSC->PDC_RPR = (uint32_t) buf;		// transfer to this memory address
 	AT91C_BASE_PDC_SSC->PDC_RCR = len;					// transfer this many bytes
 	AT91C_BASE_PDC_SSC->PDC_RNPR = (uint32_t) buf;		// next transfer to same memory address
 	AT91C_BASE_PDC_SSC->PDC_RNCR = len;					// ... with same number of bytes
-	AT91C_BASE_PDC_SSC->PDC_PTCR = AT91C_PDC_RXTEN;		// go!
-    return true;
+	FpgaEnableSscDma();
+	return true;
 }
 
 //----------------------------------------------------------------------------
@@ -231,7 +254,7 @@ static bool reset_fpga_stream(int bitstream_version, z_streamp compressed_fpga_s
 		header[i] = get_from_fpga_stream(bitstream_version, compressed_fpga_stream, output_buffer);
 
 	// Check for a valid .bit file (starts with _bitparse_fixed_header)
-	if(memcmp(_bitparse_fixed_header, header, FPGA_BITSTREAM_FIXED_HEADER_SIZE) == 0)
+	if (memcmp(_bitparse_fixed_header, header, FPGA_BITSTREAM_FIXED_HEADER_SIZE) == 0)
 		return true;
 
 	return false;
@@ -251,7 +274,7 @@ static void DownloadFPGA_byte(unsigned char w) {
 
 // Download the fpga image starting at current stream position with length FpgaImageLen bytes
 static void DownloadFPGA(int bitstream_version, int FpgaImageLen, z_streamp compressed_fpga_stream, uint8_t *output_buffer) {
-	int i=0;
+	int i = 0;
 
 	AT91C_BASE_PIOA->PIO_OER = GPIO_FPGA_ON;
 	AT91C_BASE_PIOA->PIO_PER = GPIO_FPGA_ON;
@@ -289,7 +312,7 @@ static void DownloadFPGA(int bitstream_version, int FpgaImageLen, z_streamp comp
 	SpinDelay(50);
 	HIGH(GPIO_FPGA_NPROGRAM);
 
-	i=100000;
+	i = 100000;
 	// wait for FPGA ready to accept data signal
 	while ((i) && ( !(AT91C_BASE_PIOA->PIO_PDSR & GPIO_FPGA_NINIT ) ) ) {
 		i--;
@@ -302,7 +325,7 @@ static void DownloadFPGA(int bitstream_version, int FpgaImageLen, z_streamp comp
 		return;
 	}
 
-	for(i = 0; i < FpgaImageLen; i++) {
+	for (i = 0; i < FpgaImageLen; i++) {
 		int b = get_from_fpga_stream(bitstream_version, compressed_fpga_stream, output_buffer);
 		if (b < 0) {
 			Dbprintf("Error %d during FpgaDownload", b);
@@ -312,7 +335,7 @@ static void DownloadFPGA(int bitstream_version, int FpgaImageLen, z_streamp comp
 	}
 
 	// continue to clock FPGA until ready signal goes high
-	i=100000;
+	i = 100000;
 	while ( (i--) && ( !(AT91C_BASE_PIOA->PIO_PDSR & GPIO_FPGA_DONE ) ) ) {
 		HIGH(GPIO_FPGA_CCLK);
 		LOW(GPIO_FPGA_CCLK);
@@ -406,6 +429,9 @@ void FpgaDownloadAndGo(int bitstream_version) {
 
 	inflateEnd(&compressed_fpga_stream);
 
+	// turn off antenna
+	FpgaWriteConfWord(FPGA_MAJOR_MODE_OFF);
+	
 	// free eventually allocated BigBuf memory
 	BigBuf_free(); BigBuf_Clear_ext(false);
 }
@@ -488,6 +514,7 @@ void FpgaSendCommand(uint16_t cmd, uint16_t v) {
 	SetupSpi(SPI_FPGA_MODE);
 	while ((AT91C_BASE_SPI->SPI_SR & AT91C_SPI_TXEMPTY) == 0);	// wait for the transfer to complete
 	AT91C_BASE_SPI->SPI_TDR = AT91C_SPI_LASTXFER | cmd | v;		// send the data
+	while (!(AT91C_BASE_SPI->SPI_SR & AT91C_SPI_RDRF)) {};		// wait till transfer is complete
 }
 //-----------------------------------------------------------------------------
 // Write the FPGA setup word (that determines what mode the logic is in, read
@@ -525,7 +552,7 @@ void SetAdcMuxFor(uint32_t whichGpio) {
 }
 
 void Fpga_print_status(void) {
-	DbpString("Fgpa");
+	DbpString("Fpga");
 	switch(downloaded_bitstream) {
 		case FPGA_BITSTREAM_HF: DbpString("  mode....................HF"); break;
 		case FPGA_BITSTREAM_LF: DbpString("  mode....................LF"); break;
@@ -533,7 +560,7 @@ void Fpga_print_status(void) {
 	}
 }
 
-int FpgaGetCurrent() {
+int FpgaGetCurrent(void) {
 	return downloaded_bitstream;
 }
 
@@ -541,10 +568,9 @@ int FpgaGetCurrent() {
 // log message
 // if HF,  Disable SSC DMA
 // turn off trace and leds off.
-void switch_off() {	
+void switch_off(void) {	
 	if (MF_DBGLEVEL > 3) Dbprintf("switch_off");
 	FpgaWriteConfWord(FPGA_MAJOR_MODE_OFF);
-	SpinDelay(100);
 	if (downloaded_bitstream == FPGA_BITSTREAM_HF )
 		FpgaDisableSscDma();
 	set_tracing(false);

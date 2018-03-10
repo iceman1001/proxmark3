@@ -3,6 +3,37 @@ All notable changes to this project will be documented in this file.
 This project uses the changelog in accordance with [keepchangelog](http://keepachangelog.com/). Please use this to write notable changes, which is not the same as git commit log...
 
 ## [unreleased][unreleased]
+ - Added `hf list mf` - deciphers crypto1 stream and works with first authentication and weak nested authentications (@Merlok)
+ - Adjusted `lf cmdread` to respond to client when complete and the client will then automatically call `data samples` (@marshmellow42)
+ - Added a bitbang mode to `lf cmdread` if delay is 0 the cmd bits turn off and on the antenna with 0 and 1 respectively (@marshmellow42)
+ - dump / restore now uses custom filenames (@brianpow)
+ - Removed 'hf mf sniff' ,  (@iceman),  use HF 14A SNIFF instead
+ - Added 'hf iclass lookup' (@iceman)
+ - Added 'hf iclass chk' (@iceman)
+ - Fixed ADC mux all closed push-pull state (@iceman)
+ - Fix 'hf mf darkside' - speed fixes (@pwpiwi)
+ - Fix 'hw tune'  -  now compensates for 3% error in output,  also measure full 140v using ADC channel 5 and 7.  (@iceman)
+ - Updated loclass gpl license (@holiman)
+ - Fix Antenna on after changed FPGA Mode. (@iceman)
+ - Added 'hf mf nack' - Mifare NACK bug detection (@iceman) (@doegox)
+ - Fix 'hf mf mifare' - zero parity works, no more double runs for normal darkside (@iceman)
+ - Added 'hf mf fchk' - the fastest check keys implementation tothisday (@iceman)
+ - Fix 'hf iclass' - more stable demod (@iceman)
+ - Added 'hf iclass chk'  - check keys from default_iclass_keys.dic file (@iceman)
+ - Fix 'hf 15 dump' - no more crc faults (@iceman)
+ - Fix 'hf 15 read' - no more crc faults (@iceman)
+ - Fix 'hf 15 readmulti' - no more crc faults (@iceman)
+ - Changed proxmark command line parameter `flush` to `-f` or `-flush` (@merlokk)
+ - Added to proxmark command line parameters `w` - wait 20s for serial port (@merlokk)
+ - Added to proxmark command line parameters `c` and `l` - execute command and lua script from command line (@merlokk)
+ - Added to proxmark ability to execute commands from stdin (pipe) ((@merlokk)
+ - Added new standalone mode "HF Mifare ultra fast sniff/sim/clone - aka VIGIKPWN"  (@cjbrigato)
+ - Added to `hf 14a apdu` - exchange apdu via iso1443-4 (@merlokk) 
+ - Added to `hf 14a apdu` - apdu and tlv results parser (@merlokk)
+ - Added 'hf emv' commands  (@merlokk)
+ - lots of bug fixes (many many) 
+### Fixed
+- Changed start sequence in Qt mode (fix: short commands hangs main Qt thread) (Merlok)
 
 ## [ice.3.1.0][2017-09-26]
   - proxmark3 client can reconnect to device without restart (iceman)

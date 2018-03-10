@@ -30,6 +30,8 @@ local bxor = bit32.bxor
 --- 
 -- A debug printout-function
 local function dbg(args)
+	if not DEBUG then return end
+	
     if type(args) == "table" then
 		local i = 1
 		while args[i] do
@@ -50,6 +52,7 @@ end
 -- Usage help
 local function help()
 	print(copyright)
+	print(author)	
 	print(version)	
 	print(desc)
 	print("Example usage")
@@ -159,7 +162,7 @@ local function main(args)
 		if #uid ~= 14 then return oops('uid wrong length. Should be 7 hex bytes') end
 	else
 		-- GET TAG UID	
-		local tag, err = lib14a.read1443a(false, true)
+		local tag, err = lib14a.read(false, true)
 		if not tag then return oops(err) end
 		core.clearCommandBuffer()
 		uid = tag.uid	

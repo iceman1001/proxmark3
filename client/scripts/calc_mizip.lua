@@ -57,6 +57,7 @@ end
 -- Usage help
 local function help()
 	print(copyright)
+	print(author)	
 	print(version)	
 	print(desc)
 	print("Example usage")
@@ -173,7 +174,7 @@ local function main(args)
 		if #uid ~= 8 then return oops('uid wrong length. Should be 4 hex bytes') end
 	else
 		-- GET TAG UID	
-		local tag, err = lib14a.read1443a(false, true)
+		local tag, err = lib14a.read(false, true)
 		if not tag then return oops(err) end
 		core.clearCommandBuffer()
 

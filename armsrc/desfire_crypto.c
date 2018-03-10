@@ -30,6 +30,7 @@
 static void xor (const uint8_t *ivect, uint8_t *data, const size_t len);
 static size_t key_macing_length (desfirekey_t key);
 
+// iceman,  see memxor inside string.c, dest/src swapped..
 static void xor (const uint8_t *ivect, uint8_t *data, const size_t len) {
     for (size_t i = 0; i < len; i++) {
         data[i] ^= ivect[i];
@@ -258,7 +259,7 @@ void* mifare_cryto_preprocess_data (desfiretag_t tag, void *data, size_t *nbytes
                 // ... CRC ...
                 switch (DESFIRE (tag)->authentication_scheme) {
                 case AS_LEGACY:
-                    AppendCrc14443a(res + offset, *nbytes - offset);
+                    AddCrc14A(res + offset, *nbytes - offset);
                     *nbytes += 2;
                     break;
                 case AS_NEW:
@@ -445,9 +446,8 @@ void* mifare_cryto_postprocess_data (desfiretag_t tag, void *data, size_t *nbyte
             uint32_t crc;
             switch (DESFIRE (tag)->authentication_scheme) {
             case AS_LEGACY:
-                end_crc_pos = crc_pos + 2;
-                AppendCrc14443a (res, end_crc_pos);
-				
+                AddCrc14A( (uint8_t*)res, end_crc_pos);
+                end_crc_pos = crc_pos + 2;				
 				// 
 				
 				

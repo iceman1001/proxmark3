@@ -22,7 +22,7 @@
  *
  * This is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as published
- * by the Free Software Foundation.
+ * by the Free Software Foundation, or, at your option, any later version. 
  *
  * This file is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -33,7 +33,6 @@
  * along with loclass.  If not, see <http://www.gnu.org/licenses/>.
  * 
  * 
- * 
  ****************************************************************************/
 
 #ifndef FILEUTILS_H
@@ -42,6 +41,8 @@
 #ifndef ON_DEVICE
 
 #include <inttypes.h>
+#include "../ui.h"
+
 /**
  * @brief Utility function to save data to a binary file. This method takes a preferred name, but if that
  * file already exists, it tries with another name until it finds something suitable.
@@ -85,5 +86,5 @@ int fileExists(const char *filename);
  * write also to a logfile. When doing so, just point this function to use PrintAndLog
  * @param fmt
  */
-void prnlog(char *fmt, ...);
+void PrintAndLogDevice(logLevel_t level, char *fmt, ...);
 #endif // FILEUTILS_H

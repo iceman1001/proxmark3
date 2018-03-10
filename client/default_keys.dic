@@ -1,10 +1,14 @@
 #
-# Default Keys as already in Proxmark.exe:
+# Mifare Default Keys
+#   -- iceman fork version --
+#   -- contribute to this list, sharing is caring --
+#  
 ffffffffffff,//Defaultkey(firstkeyusedbyprogramifnouserdefinedkey)
 000000000000,//Blankkey
 a0a1a2a3a4a5,//NFCForumMADkey
 b0b1b2b3b4b5,
 c0c1c2c3c4c5,
+d0d1d2d3d4d5,
 aabbccddeeff,
 4d3a99c351dd,
 1a982c7e459a,
@@ -150,11 +154,24 @@ AAFB06045877, --EPI Envisionte# 3dprinter
 3e65e4fb65b3, --Fysiken A
 25094df6f148, --Fysiken B
 #
+# 24-7 
+D21762B2DE3B,
+0E83A374B513,
+1F1FFE000000,
+A10F303FC879,
+1322285230b8,
+0C71BCFB7E72,
+C3C88C6340B8,
+F101622750B7,
+1F107328DC8D,
+710732200D34,
+7C335FB121B5,
+B39AE17435DC,
+#
 #
 454841585443, -- key A
 #
 # Data from: http://pastebin.com/gQ6nk38G
-A0A1A2A3A4A5,
 D39BB83F5297,
 A27D3804C259,
 85675B200017,
@@ -280,9 +297,6 @@ a7abbc77cc9e,
 f792c4c76a5c,
 bfb6796a11db,
 #
-# Data from
-8829da9daf76,
-#
 # Data from Salto A/B
 6A1987C40A21,
 7F33625BC129,
@@ -324,18 +338,20 @@ a56c2df9a26d,
 2031d1e57a3b,
 68d3f7307c89,
 9189449ea24e,
-568c9083f71c,
+568c9083f71c,--Smart Rider. Western Australian Public Transport Cards
 53c11f90822a,
 # Vigik Keys
 # Various sources :
 # * https://github.com/DumpDos/Vigik
 # * http://newffr.com/viewtopic.php?&forum=235&topic=11559
 # * Own dumps
-021209197591,
+021209197591,  // BTCINO UNDETERMINED SPREAKD 0x01->0x13 key
 2ef720f2af76,
+414c41524f4e,
 424c41524f4e,
 4a6352684677,
 bf1f4424af76,
+536653644c65,
 # 
 # Intratone Cogelec 
 # Data from http://bouzdeck.com/rfid/32-cloning-a-mifare-classic-1k-tag.html
@@ -345,6 +361,7 @@ a22ae129c013,
 38fcf33072e0, 
 8ad5517b4b18,
 509359f131b1, 
+6c78928e1317,
 aa0720018738, 
 a6cac2886412, 
 62d0c424ed8e, 
@@ -361,7 +378,6 @@ fad63ecb5891,
 bba840ba1c57,
 cc6b3b3cd263,
 6245e47352e6,
-6c78928e1317,
 8ed41e8b8056,
 2dd39a54e1f3,
 6d4c5b3658d2,
@@ -489,3 +505,67 @@ f7a39753d018,
 8697389ACA26,
 1AB23CD45EF6,
 013889343891,
+#
+#
+0000000018de,
+16ddcb6b3f24,
+#
+# Data from https://pastebin.com/vwDRZW7d
+EC0A9B1A9E06,--Vingcard Mifare 4k Staff card
+6C94E1CED026,--Vingcard Mifare 4k Staff card
+0F230695923F,--Vingcard Mifare 4k Staff card
+0000014B5C31,--Vingcard Mifare 4k Staff card
+#
+BEDB604CC9D1,
+B8A1F613CF3D,
+B578F38A5C61,
+AD4FB33388BF,
+69FB7B7CD8EE,
+2A6D9205E7CA,
+2a2c13cc242a,
+27FBC86A00D0,
+01FA3FC68349,
+#
+6D44B5AAF464,--Smart Rider. Western Australian Public Transport Cards
+1717E34A7A8A,--Smart Rider. Western Australian Public Transport Cards
+#
+6B6579737472,--RFIDeas
+#
+484944204953,--HID MIFARE Classic 1k Key
+204752454154,--HID MIFARE Classic 1k Key
+3B7E4FD575AD,--HID MIFARE SO
+11496F97752A,--HID MIFARE SO
+#
+415A54454B4D,--Luxeo/Aztek cashless vending
+#
+321958042333,--BQT
+#
+160A91D29A9C,--Aperio KEY_A Sector 1, 12, 13, 14, 15 Data Start 0 Length 48
+#
+b7bf0c13066e,--Gallagher
+#
+# Boston, MA, USA Transit - MBTA Charlie Card
+3060206f5b0a,-- charlie
+5ec39b022f2b,-- charlie
+3a09594c8587,-- charlie
+f1b9f5669cc8,-- charlie
+f662248e7e89,-- charlie
+62387b8d250d,-- charlie
+f238d78ff48f,-- charlie
+9dc282d46217,-- charlie
+afd0ba94d624,-- charlie
+92ee4dc87191,-- charlie
+b35a0e4acc09,-- charlie
+756ef55e2507,-- charlie
+447ab7fd5a6b,-- charlie
+932b9cb730ef,-- charlie
+1f1a0a111b5b,-- charlie
+ad9e0a1ca2f7,-- charlie
+d58023ba2bdc,-- charlie
+62ced42a6d87,-- charlie
+2548a443df28,-- charlie
+2ed3b15e7c0f,-- charlie
+#
+# Data from forum
+6a1987c40a21
+7f33625bc129

@@ -29,8 +29,8 @@
  * @file uart.h
  */
 
-#ifndef _PM3_UART_H_
-#define _PM3_UART_H_
+#ifndef _UART_H_
+#define _UART_H_
 
 #include <stdio.h>
 #include <string.h>
@@ -82,9 +82,9 @@ bool uart_receive(const serial_port sp, byte_t* pbtRx, size_t pszMaxRxLen, size_
 
 /* Sends a buffer to a given serial port.
  *   pbtTx: A pointer to a buffer containing the data to send.
- *   szTxLen: The amount of data to be sent.
+ *   len: The amount of data to be sent.
  */
-bool uart_send(const serial_port sp, const byte_t* pbtTx, const size_t szTxLen);
+bool uart_send(const serial_port sp, const byte_t* pbtTx, const size_t len);
 
 /* Sets the current speed of the serial port, in baud.
  */
@@ -94,5 +94,5 @@ bool uart_set_speed(serial_port sp, const uint32_t uiPortSpeed);
  */
 uint32_t uart_get_speed(const serial_port sp);
 
-#endif // _PM3_UART_H_
+#endif // _UART_H_
 

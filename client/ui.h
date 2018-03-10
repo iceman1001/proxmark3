@@ -28,11 +28,16 @@
 #ifndef M_PI
 #define M_PI 3.14159265358979323846264338327
 #endif
+#define MAX_PRINT_BUFFER 2048
+typedef enum logLevel {NORMAL, SUCCESS, INFO, FAILED, WARNING, ERR, DEBUG} logLevel_t; 
+
 void ShowGui(void);
 void HideGraphWindow(void);
 void ShowGraphWindow(void);
 void RepaintGraphWindow(void);
 extern void PrintAndLog(char *fmt, ...);
+void PrintAndLogOptions(char *str[][2], size_t size, size_t space);
+void PrintAndLogEx(logLevel_t level, char *fmt, ...);
 extern void SetLogFilename(char *fn);
 
 extern double CursorScaleFactor;
@@ -41,6 +46,10 @@ extern int offline;
 extern int flushAfterWrite;   //buzzy
 extern bool GridLocked;
 extern bool showDemod;
+
+//extern uint8_t g_debugMode;
+
+extern pthread_mutex_t print_lock;
 
 extern void iceIIR_Butterworth(int * data, const size_t len);
 extern void iceSimple_Filter(int *data, const size_t len, uint8_t k);

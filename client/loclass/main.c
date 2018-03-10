@@ -22,7 +22,7 @@
  *
  * This is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as published
- * by the Free Software Foundation.
+ * by the Free Software Foundation, or, at your option, any later version. 
  *
  * This file is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -31,7 +31,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with loclass.  If not, see <http://www.gnu.org/licenses/>.
- * 
  * 
  * 
  ****************************************************************************/
@@ -57,42 +56,42 @@ int unitTests()
 	errors += testElite();
     if(errors)
     {
-        prnlog("OBS! There were errors!!!");
+        PrintAndLogDevice(NORMAL, "OBS! There were errors!!!");
     }
 	return errors;
 }
 int showHelp()
 {
-    prnlog("Usage: loclass [options]");
-	prnlog("Options:");
-	prnlog("-t                 Perform self-test");
-	prnlog("-h                 Show this help");
-	prnlog("-f <filename>      Bruteforce iclass dumpfile");
-	prnlog("                   An iclass dumpfile is assumed to consist of an arbitrary number of malicious CSNs, and their protocol responses");
-	prnlog("                   The binary format of the file is expected to be as follows: ");
-	prnlog("                   <8 byte CSN><8 byte CC><4 byte NR><4 byte MAC>");
-	prnlog("                   <8 byte CSN><8 byte CC><4 byte NR><4 byte MAC>");
-	prnlog("                   <8 byte CSN><8 byte CC><4 byte NR><4 byte MAC>");
-	prnlog("                  ... totalling N*24 bytes");
-	prnlog("                  Check iclass_dump.bin for an example");
+    PrintAndLogDevice(NORMAL, "Usage: loclass [options]");
+	PrintAndLogDevice(NORMAL, "Options:");
+	PrintAndLogDevice(NORMAL, "-t                 Perform self-test");
+	PrintAndLogDevice(NORMAL, "-h                 Show this help");
+	PrintAndLogDevice(NORMAL, "-f <filename>      Bruteforce iclass dumpfile");
+	PrintAndLogDevice(NORMAL, "                   An iclass dumpfile is assumed to consist of an arbitrary number of malicious CSNs, and their protocol responses");
+	PrintAndLogDevice(NORMAL, "                   The binary format of the file is expected to be as follows: ");
+	PrintAndLogDevice(NORMAL, "                   <8 byte CSN><8 byte CC><4 byte NR><4 byte MAC>");
+	PrintAndLogDevice(NORMAL, "                   <8 byte CSN><8 byte CC><4 byte NR><4 byte MAC>");
+	PrintAndLogDevice(NORMAL, "                   <8 byte CSN><8 byte CC><4 byte NR><4 byte MAC>");
+	PrintAndLogDevice(NORMAL, "                  ... totalling N*24 bytes");
+	PrintAndLogDevice(NORMAL, "                  Check iclass_dump.bin for an example");
 
 	return 0;
 }
 
 int main (int argc, char **argv)
 {
-	prnlog("IClass Cipher version 1.2, Copyright (C) 2014 Martin Holst Swende\n");
-	prnlog("Comes with ABSOLUTELY NO WARRANTY");
-	prnlog("Released as GPLv2\n");
-	prnlog("WARNING");
-	prnlog("");
-	prnlog("THIS TOOL IS CREATED FOR EXPERIMENTATION AND EDUCATIONAL USE ONLY. ");
-	prnlog("");
-	prnlog("USAGE OF THIS TOOL IN OTHER WAYS MAY INFRINGE UPON THE INTELLECTUAL ");
-	prnlog("PROPERTY OF OTHER PARTIES, SUCH AS INSIDE SECURE AND HID GLOBAL, ");
-	prnlog("AND MAY EXPOSE YOU TO AN INFRINGEMENT ACTION FROM THOSE PARTIES. ");
-	prnlog("");
-	prnlog("THIS TOOL SHOULD NEVER BE USED TO INFRINGE PATENTS OR INTELLECTUAL PROPERTY RIGHTS. ");
+	PrintAndLogDevice(NORMAL, "IClass Cipher version 1.2, Copyright (C) 2014 Martin Holst Swende\n");
+	PrintAndLogDevice(NORMAL, "Comes with ABSOLUTELY NO WARRANTY");
+	PrintAndLogDevice(NORMAL, "Released as GPLv2\n");
+	PrintAndLogDevice(NORMAL, "WARNING");
+	PrintAndLogDevice(NORMAL, "");
+	PrintAndLogDevice(NORMAL, "THIS TOOL IS CREATED FOR EXPERIMENTATION AND EDUCATIONAL USE ONLY. ");
+	PrintAndLogDevice(NORMAL, "");
+	PrintAndLogDevice(NORMAL, "USAGE OF THIS TOOL IN OTHER WAYS MAY INFRINGE UPON THE INTELLECTUAL ");
+	PrintAndLogDevice(NORMAL, "PROPERTY OF OTHER PARTIES, SUCH AS INSIDE SECURE AND HID GLOBAL, ");
+	PrintAndLogDevice(NORMAL, "AND MAY EXPOSE YOU TO AN INFRINGEMENT ACTION FROM THOSE PARTIES. ");
+	PrintAndLogDevice(NORMAL, "");
+	PrintAndLogDevice(NORMAL, "THIS TOOL SHOULD NEVER BE USED TO INFRINGE PATENTS OR INTELLECTUAL PROPERTY RIGHTS. ");
 
 
 	char *fileName = NULL;

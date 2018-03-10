@@ -47,7 +47,7 @@ typedef struct {
   DCB dcb;          // Device control settings
   COMMTIMEOUTS ct;  // Serial port time-out configuration
 } serial_port_windows;
-
+/*
 void upcase(char *p) {
   while(*p != '\0') {
     if(*p >= 97 && *p <= 122) {
@@ -56,6 +56,7 @@ void upcase(char *p) {
     ++p;
   }
 }
+*/
 
 serial_port uart_open(const char* pcPortName) {
 	char acPortName[255];
@@ -66,9 +67,10 @@ serial_port uart_open(const char* pcPortName) {
 
 	// Copy the input "com?" to "\\.\COM?" format
 	sprintf(acPortName,"\\\\.\\%s", pcPortName);
-	upcase(acPortName);
+	_strupr(acPortName);
 
 	// Try to open the serial port
+	// r/w,  none-share comport, no security, existing, no overlapping, no templates
 	sp->hPort = CreateFileA(acPortName, GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
 	if (sp->hPort == INVALID_HANDLE_VALUE) {
 		uart_close(sp);
@@ -79,7 +81,7 @@ serial_port uart_open(const char* pcPortName) {
 	// doesn't matter since PM3 device ignors this CDC command:  set_line_coding in usb_cdc.c
 	memset(&sp->dcb, 0, sizeof(DCB));
 	sp->dcb.DCBlength = sizeof(DCB);
-	if (!BuildCommDCBA("baud=115200 parity=N data=8 stop=1",&sp->dcb)) {
+	if (!BuildCommDCBA("baud=115200 parity=N data=8 stop=1", &sp->dcb)) {
 		uart_close(sp);
 		return INVALID_SERIAL_PORT;
 	}
@@ -91,11 +93,11 @@ serial_port uart_open(const char* pcPortName) {
 	}
 	// all zero's configure: no timeout for read/write used.
 	// took settings from libnfc/buses/uart.c
-	sp->ct.ReadIntervalTimeout         = 0;//1;
-	sp->ct.ReadTotalTimeoutMultiplier  = 0;//1;
+	sp->ct.ReadIntervalTimeout         = 30;
+	sp->ct.ReadTotalTimeoutMultiplier  = 0;
 	sp->ct.ReadTotalTimeoutConstant    = 30;
-	sp->ct.WriteTotalTimeoutMultiplier = 0;//1;
-	sp->ct.WriteTotalTimeoutConstant   = 30;
+	sp->ct.WriteTotalTimeoutMultiplier = 30;
+	sp->ct.WriteTotalTimeoutConstant   = 0;
   
 	if (!SetCommTimeouts(sp->hPort, &sp->ct)) {
 		uart_close(sp);
@@ -117,22 +119,26 @@ void uart_close(const serial_port sp) {
 	free(sp);
 }
 
-bool uart_receive(const serial_port sp, byte_t* p_rx, size_t pszMaxRxLen, size_t* p_rxlen) {
-	ReadFile(((serial_port_windows*)sp)->hPort, p_rx, pszMaxRxLen, (LPDWORD)p_rxlen, NULL);
-	return (*p_rxlen != 0);
-}
-
-bool uart_send(const serial_port sp, const byte_t* p_tx, const size_t len) {
-	DWORD txlen = 0;
-	return WriteFile(((serial_port_windows*)sp)->hPort, p_tx, len, &txlen, NULL);
-}
-
 bool uart_set_speed(serial_port sp, const uint32_t uiPortSpeed) {
 	serial_port_windows* spw;
+
+	// Set port speed (Input and Output)
+	switch (uiPortSpeed) {
+		case 9600:
+		case 19200:
+		case 38400:
+		case 57600:
+		case 115200:
+		case 230400:
+		case 460800:
+		break;
+		default:
+			return false;
+	};
+	
 	spw = (serial_port_windows*)sp;
 	spw->dcb.BaudRate = uiPortSpeed;
 	bool result = SetCommState(spw->hPort, &spw->dcb);
-
 	PurgeComm(spw->hPort, PURGE_RXABORT | PURGE_RXCLEAR);
 	return result;
 }
@@ -143,6 +149,34 @@ uint32_t uart_get_speed(const serial_port sp) {
 		return spw->dcb.BaudRate;
 
 	return 0;
+}
+
+bool uart_receive(const serial_port sp, byte_t* p_rx, size_t pszMaxRxLen, size_t* p_rxlen) {
+	int res = ReadFile(((serial_port_windows*)sp)->hPort, p_rx, pszMaxRxLen, (LPDWORD)p_rxlen, NULL);
+	if ( res == 0 ) {
+		//printf("[!] UART error reading from port\n");
+		return false;
+	}
+	
+	bool read_test = ( pszMaxRxLen ==  *p_rxlen );
+	if ( !read_test && *p_rxlen > 0 ) {
+		printf("[!] UART error, not all data read from port  len %u | read %u\n", pszMaxRxLen, *p_rxlen);
+	}
+	return read_test;
+}
+
+bool uart_send(const serial_port sp, const byte_t* p_tx, const size_t len) {
+	DWORD txlen = 0;		
+	int res = WriteFile(((serial_port_windows*)sp)->hPort, p_tx, len, &txlen, NULL);
+	if ( res == 0) {
+		printf("[!] UART error writing to port\n");
+		return false;
+	}
+	bool write_test = ( len == txlen );
+	if ( !write_test ) {
+		printf("[!] UART error, not all data written to port  len %u | sent %lu\n", len, txlen);
+	}	
+	return write_test;
 }
 
 #endif

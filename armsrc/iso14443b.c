@@ -38,7 +38,7 @@
 // 4sample
 #define SEND4STUFFBIT(x) ToSendStuffBit(x);ToSendStuffBit(x);ToSendStuffBit(x);ToSendStuffBit(x);
 //#define SEND4STUFFBIT(x) ToSendStuffBit(x);
- // iceman, this threshold value,  what makes 8 a good amplituted for this IQ values? 
+ // iceman, this threshold value,  what makes 8 a good amplitude for this IQ values? 
 #ifndef SUBCARRIER_DETECT_THRESHOLD
 # define SUBCARRIER_DETECT_THRESHOLD	8
 #endif
@@ -167,10 +167,6 @@ static void iso14b_set_maxframesize(uint16_t size) {
 	
 	Uart.byteCntMax = size;
 	if(MF_DBGLEVEL >= 3) Dbprintf("ISO14443B Max frame size set to %d bytes", Uart.byteCntMax);
-}
-
-void AppendCrc14443b(uint8_t* data, int len) {
-	ComputeCrc14443(CRC_14443_B, data, len, data+len, data+len+1);
 }
 
 //-----------------------------------------------------------------------------
@@ -450,12 +446,19 @@ static int GetIso14443bCommandFromReader(uint8_t *received, uint16_t *len) {
 
 	// clear receiving shift register and holding register
 	// What does this loop do? Is it TR1?
-   	for(uint8_t c = 0; c < 10;) {
+	// loop is a wait/delay  ? 
+   	/*
+	for(uint8_t c = 0; c < 10;) {
 		if(AT91C_BASE_SSC->SSC_SR & (AT91C_SSC_TXRDY)) {
 			AT91C_BASE_SSC->SSC_THR = 0xFF;
 			++c;
 		}
+			
+		if (AT91C_BASE_SSC->SSC_SR & (AT91C_SSC_RXRDY)) {
+			b = (uint16_t)(AT91C_BASE_SSC->SSC_RHR); (void)b;
+		}
 	}
+	*/
 	
 	// Now run a `software UART' on the stream of incoming samples.
 	UartInit(received);
@@ -546,19 +549,16 @@ static void TransmitFor14443b_AsTag( uint8_t *response, uint16_t len) {
 //-----------------------------------------------------------------------------
 void SimulateIso14443bTag(uint32_t pupi) {
 
-	///////////// setup device.
+	// setup device.
 	FpgaDownloadAndGo(FPGA_BITSTREAM_HF);
-
-	// connect Demodulated Signal to ADC:
-	SetAdcMuxFor(GPIO_MUXSEL_HIPKD);
-
 	// Set up the synchronous serial port
 	FpgaSetupSsc();
-	/////////////
+	// connect Demodulated Signal to ADC:
+	SetAdcMuxFor(GPIO_MUXSEL_HIPKD);
 	
 	// allocate command receive buffer
-	BigBuf_free();
-	BigBuf_Clear_ext(false);
+	BigBuf_free(); BigBuf_Clear_ext(false);
+
 	clear_trace(); //sim
 	set_tracing(true);
 
@@ -588,9 +588,8 @@ void SimulateIso14443bTag(uint32_t pupi) {
 
 	// ...PUPI/UID supplied from user. Adjust ATQB response accordingly
 	if ( pupi > 0 ) {
-		uint8_t len = sizeof(respATQB);
 		num_to_bytes(pupi, 4, respATQB+1);
-		ComputeCrc14443(CRC_14443_B, respATQB, 12, &respATQB[len-2], &respATQB[len-1]);
+		AddCrc14B(respATQB, 12);
 	}
 
 	// prepare "ATQB" tag answer (encoded):
@@ -685,10 +684,9 @@ void SimulateIso14443bTag(uint32_t pupi) {
 					Dbprintf("new cmd from reader: len=%d, cmdsRecvd=%d", len, cmdsReceived);
 
 					// CRC Check
-					uint8_t b1, b2;
 					if (len >= 3){ // if crc exists
-						ComputeCrc14443(CRC_14443_B, receivedCmd, len-2, &b1, &b2);
-						if(b1 != receivedCmd[len-2] || b2 != receivedCmd[len-1])
+						
+						if (!check_crc(CRC_14443_B, receivedCmd, len))
 							DbpString("+++CRC fail");
 						else
 							DbpString("CRC passes");
@@ -781,9 +779,7 @@ static RAMFUNC int Handle14443bTagSamplesDemod(int ci, int cq) {
 	}
 
 //note: couldn't we just use MAX(ABS(ci),ABS(cq)) + (MIN(ABS(ci),ABS(cq))/2) from common.h - marshmellow
-#define CHECK_FOR_SUBCARRIER() { \
-		v = MAX(myI, myQ) + (MIN(myI, myQ) >> 1); \
- 	}
+#define CHECK_FOR_SUBCARRIER() { v = MAX(myI, myQ) + (MIN(myI, myQ) >> 1); }
 
 	switch(Demod.state) {
 		case DEMOD_UNSYNCD:
@@ -1030,6 +1026,7 @@ static void TransmitFor14443b_AsReader(void) {
 	// 0xFF = 8 bits of 1.    1 bit == 1Etu,..  
 	// loop 10 * 8 = 80 ETU of delay, with a non modulated signal.  why?
 	// 80*9 = 720us.
+/*
    	for(c = 0; c < 50;) {
 		if(AT91C_BASE_SSC->SSC_SR & (AT91C_SSC_TXRDY)) {
 			AT91C_BASE_SSC->SSC_THR = 0xFF;
@@ -1039,13 +1036,14 @@ static void TransmitFor14443b_AsReader(void) {
 			b = AT91C_BASE_SSC->SSC_RHR; (void)b;
 		}
 	}
-
+*/
+	
 	// Send frame loop
 	for(c = 0; c < ToSendMax;) {
-		if(AT91C_BASE_SSC->SSC_SR & (AT91C_SSC_TXRDY)) {
+		if (AT91C_BASE_SSC->SSC_SR & (AT91C_SSC_TXRDY)) {
 			AT91C_BASE_SSC->SSC_THR = ToSend[c++];
 		}
-		if(AT91C_BASE_SSC->SSC_SR & (AT91C_SSC_RXRDY)) {
+		if (AT91C_BASE_SSC->SSC_SR & (AT91C_SSC_RXRDY)) {
 			b = AT91C_BASE_SSC->SSC_RHR; (void)b;
 		}					
 	}
@@ -1133,9 +1131,8 @@ static void CodeIso14443bAsReader(const uint8_t *cmd, int len) {
 	
 	// TR1 - Synchronization time
 	// Convert from last character reference to length
-	++ToSendMax;
+	ToSendMax++;
 }
-
 
 /*
 *  Convenience function to encode, transmit and trace iso 14443b comms
@@ -1156,9 +1153,8 @@ static void CodeAndTransmit14443bAsReader(const uint8_t *cmd, int len) {
 /* Sends an APDU to the tag
  * TODO: check CRC and preamble
  */
-uint8_t iso14443b_apdu(uint8_t const *message, size_t message_length, uint8_t *response)
-{
-	uint8_t crc[2] = {0x00, 0x00};
+uint8_t iso14443b_apdu(uint8_t const *message, size_t message_length, uint8_t *response) {
+
 	uint8_t message_frame[message_length + 4];
 	// PCB
 	message_frame[0] = 0x0A | pcb_blocknum;
@@ -1168,7 +1164,7 @@ uint8_t iso14443b_apdu(uint8_t const *message, size_t message_length, uint8_t *r
 	// INF
 	memcpy(message_frame + 2, message, message_length);
 	// EDC (CRC)
-	ComputeCrc14443(CRC_14443_B, message_frame, message_length + 2, &message_frame[message_length + 2], &message_frame[message_length + 3]);
+	AddCrc14B(message_frame, message_length + 2);
 	// send
 	CodeAndTransmit14443bAsReader(message_frame, message_length + 4); //no
 	// get response
@@ -1177,8 +1173,7 @@ uint8_t iso14443b_apdu(uint8_t const *message, size_t message_length, uint8_t *r
 		return 0;
 	
 	// VALIDATE CRC
-    ComputeCrc14443(CRC_14443_B, Demod.output, Demod.len-2, &crc[0], &crc[1]);
-	if ( crc[0] != Demod.output[Demod.len-2] || crc[1] != Demod.output[Demod.len-1] )
+	if (!check_crc(CRC_14443_B, Demod.output, Demod.len))
 		return 0;
 	
 	// copy response contents
@@ -1191,14 +1186,11 @@ uint8_t iso14443b_apdu(uint8_t const *message, size_t message_length, uint8_t *r
 /**
 * SRx Initialise.
 */
-uint8_t iso14443b_select_srx_card(iso14b_card_select_t *card )
-{
+uint8_t iso14443b_select_srx_card(iso14b_card_select_t *card ) {
 	// INITIATE command: wake up the tag using the INITIATE
 	static const uint8_t init_srx[] = { ISO14443B_INITIATE, 0x00, 0x97, 0x5b };
 	// SELECT command (with space for CRC)
 	uint8_t select_srx[] = { ISO14443B_SELECT, 0x00, 0x00, 0x00};
-	// temp to calc crc.
-	uint8_t crc[2] = {0x00, 0x00};
 	
 	CodeAndTransmit14443bAsReader(init_srx, sizeof(init_srx));
 	GetTagSamplesFor14443bDemod(); //no
@@ -1210,15 +1202,15 @@ uint8_t iso14443b_select_srx_card(iso14b_card_select_t *card )
 	
 	select_srx[1] = Demod.output[0];
 	
-	ComputeCrc14443(CRC_14443_B, select_srx, 2, &select_srx[2], &select_srx[3]);
+	AddCrc14B(select_srx, 2);
+	
 	CodeAndTransmit14443bAsReader(select_srx, sizeof(select_srx));
 	GetTagSamplesFor14443bDemod(); //no
 	
 	if (Demod.len != 3)	return 2;
 	
 	// Check the CRC of the answer:
-	ComputeCrc14443(CRC_14443_B, Demod.output, Demod.len-2 , &crc[0], &crc[1]);
-	if(crc[0] != Demod.output[1] || crc[1] != Demod.output[2]) return 3;
+	if (!check_crc(CRC_14443_B, Demod.output, Demod.len)) return 3;
 	
 	// Check response from the tag: should be the same UID as the command we just sent:
 	if (select_srx[1] != Demod.output[0]) return 1;
@@ -1226,15 +1218,14 @@ uint8_t iso14443b_select_srx_card(iso14b_card_select_t *card )
 	// First get the tag's UID:
 	select_srx[0] = ISO14443B_GET_UID;
 
-	ComputeCrc14443(CRC_14443_B, select_srx, 1 , &select_srx[1], &select_srx[2]);
+	AddCrc14B(select_srx, 1);
 	CodeAndTransmit14443bAsReader(select_srx, 3); // Only first three bytes for this one
 	GetTagSamplesFor14443bDemod(); //no
 
 	if (Demod.len != 10) return 2;
 	
-	// The check the CRC of the answer
-	ComputeCrc14443(CRC_14443_B, Demod.output, Demod.len-2, &crc[0], &crc[1]);
-	if(crc[0] != Demod.output[8] || crc[1] != Demod.output[9]) return 3;
+	// The check the CRC of the answer	
+	if (!check_crc(CRC_14443_B, Demod.output, Demod.len)) return 3;
 
 	if (card) {
 		card->uidlen = 8;
@@ -1249,16 +1240,12 @@ uint8_t iso14443b_select_srx_card(iso14b_card_select_t *card )
  * TODO: Support multiple cards (perform anticollision)
  * TODO: Verify CRC checksums
  */
-uint8_t iso14443b_select_card(iso14b_card_select_t *card )
-{
+uint8_t iso14443b_select_card(iso14b_card_select_t *card ) {
 	// WUPB command (including CRC)
 	// Note: WUPB wakes up all tags, REQB doesn't wake up tags in HALT state
 	static const uint8_t wupb[] = { ISO14443B_REQB, 0x00, 0x08, 0x39, 0x73 };
 	// ATTRIB command (with space for CRC)
 	uint8_t attrib[] = { ISO14443B_ATTRIB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00};
-
-	// temp to calc crc.
-	uint8_t crc[2] = {0x00, 0x00};
 	
 	// first, wake up the tag
 	CodeAndTransmit14443bAsReader(wupb, sizeof(wupb));
@@ -1268,8 +1255,7 @@ uint8_t iso14443b_select_card(iso14b_card_select_t *card )
 	if (Demod.len < 14) return 2;
 	
 	// VALIDATE CRC
-    ComputeCrc14443(CRC_14443_B, Demod.output, Demod.len-2, &crc[0], &crc[1]);
-	if ( crc[0] != Demod.output[12] || crc[1] != Demod.output[13] )
+	if (!check_crc(CRC_14443_B, Demod.output, Demod.len))
 		return 3;
 	
 	if (card) {
@@ -1283,7 +1269,7 @@ uint8_t iso14443b_select_card(iso14b_card_select_t *card )
 	
     // copy the protocol info from ATQB (Protocol Info -> Protocol_Type) into ATTRIB (Param 3)
     attrib[7] = Demod.output[10] & 0x0F;
-    ComputeCrc14443(CRC_14443_B, attrib, 9, attrib + 9, attrib + 10);
+    AddCrc14B(attrib, 9);
 
     CodeAndTransmit14443bAsReader(attrib, sizeof(attrib));
     GetTagSamplesFor14443bDemod();//select_card
@@ -1292,8 +1278,7 @@ uint8_t iso14443b_select_card(iso14b_card_select_t *card )
     if(Demod.len < 3) return 2;
 
 	// VALIDATE CRC
-    ComputeCrc14443(CRC_14443_B, Demod.output, Demod.len-2, &crc[0], &crc[1]);
-	if ( crc[0] != Demod.output[1] || crc[1] != Demod.output[2] ) 
+	if (!check_crc(CRC_14443_B, Demod.output, Demod.len) )
 		return 3;
 
 	if (card) { 
@@ -1362,25 +1347,23 @@ void iso14443b_setup() {
 //
 // I tried to be systematic and check every answer of the tag, every CRC, etc...
 //-----------------------------------------------------------------------------
-void ReadSTMemoryIso14443b(uint8_t numofblocks)
-{
+void ReadSTMemoryIso14443b(uint8_t numofblocks) {
 	// Make sure that we start from off, since the tags are stateful;
 	// confusing things will happen if we don't reset them between reads.
 	switch_off();
-	
+
 	FpgaDownloadAndGo(FPGA_BITSTREAM_HF);
-
-	set_tracing(true);
-
 	SetAdcMuxFor(GPIO_MUXSEL_HIPKD);
-	
+
 	FpgaSetupSsc();
 
+	set_tracing(true);
+	
 	// Now give it time to spin up.
 	// Signal field is on with the appropriate LED
 	LED_D_ON();
 	FpgaWriteConfWord(FPGA_MAJOR_MODE_HF_READER_RX_XCORR | FPGA_HF_READER_RX_XCORR_848_KHZ);
-	SpinDelay(20);
+	SpinDelay(100);
 	
 	uint8_t i = 0x00;
 
@@ -1390,7 +1373,7 @@ void ReadSTMemoryIso14443b(uint8_t numofblocks)
 	GetTagSamplesFor14443bDemod(); // no
 
 	if (Demod.len == 0) {
-		DbpString("No response from tag");
+		DbpString("[!] No response from tag");
 		set_tracing(false);	
 		return;
 	} else {
@@ -1399,27 +1382,27 @@ void ReadSTMemoryIso14443b(uint8_t numofblocks)
 	}
 
 	// There is a response, SELECT the uid
-	DbpString("Now SELECT tag:");
+	DbpString("[!] SELECT tag:");
 	cmd1[0] = ISO14443B_SELECT; // 0x0E is SELECT
 	cmd1[1] = Demod.output[0];
-	ComputeCrc14443(CRC_14443_B, cmd1, 2, &cmd1[2], &cmd1[3]);
+	AddCrc14B(cmd1, 2);
 	CodeAndTransmit14443bAsReader(cmd1, sizeof(cmd1)); //no
 	GetTagSamplesFor14443bDemod(); //no
 	if (Demod.len != 3) {
-		Dbprintf("Expected 3 bytes from tag, got %d", Demod.len);
+		Dbprintf("[!] expected 3 bytes from tag, got %d", Demod.len);
 		set_tracing(false);	
 		return;
 	}
 	// Check the CRC of the answer:
-	ComputeCrc14443(CRC_14443_B, Demod.output, 1 , &cmd1[2], &cmd1[3]);
-	if(cmd1[2] != Demod.output[1] || cmd1[3] != Demod.output[2]) {
-		DbpString("CRC Error reading select response.");
+	
+	if (!check_crc(CRC_14443_B, Demod.output, Demod.len)) {
+		DbpString("[!] CRC Error reading select response.");
 		set_tracing(false);	
 		return;
 	}
 	// Check response from the tag: should be the same UID as the command we just sent:
 	if (cmd1[1] != Demod.output[0]) {
-		Dbprintf("Bad response to SELECT from Tag, aborting: %02x %02x", cmd1[1], Demod.output[0]);
+		Dbprintf("[!] Bad response to SELECT from Tag, aborting: %02x %02x", cmd1[1], Demod.output[0]);
 		set_tracing(false);	
 		return;
 	}
@@ -1427,49 +1410,48 @@ void ReadSTMemoryIso14443b(uint8_t numofblocks)
 	// Tag is now selected,
 	// First get the tag's UID:
 	cmd1[0] = ISO14443B_GET_UID;
-	ComputeCrc14443(CRC_14443_B, cmd1, 1 , &cmd1[1], &cmd1[2]);
+	AddCrc14B(cmd1, 1);
 	CodeAndTransmit14443bAsReader(cmd1, 3); // no --  Only first three bytes for this one
 	GetTagSamplesFor14443bDemod(); //no
 	if (Demod.len != 10) {
-		Dbprintf("Expected 10 bytes from tag, got %d", Demod.len);
+		Dbprintf("[!] expected 10 bytes from tag, got %d", Demod.len);
 		set_tracing(false);	
 		return;
 	}
 	// The check the CRC of the answer (use cmd1 as temporary variable):
-	ComputeCrc14443(CRC_14443_B, Demod.output, 8, &cmd1[2], &cmd1[3]);
-	if(cmd1[2] != Demod.output[8] || cmd1[3] != Demod.output[9]) {
-		Dbprintf("CRC Error reading block! Expected: %04x got: %04x",
-				(cmd1[2]<<8)+cmd1[3], (Demod.output[8]<<8)+Demod.output[9]);
+	
+	if (!check_crc(CRC_14443_B, Demod.output, Demod.len)) {
+		Dbprintf("[!] CRC Error reading block! Expected: %04x got: %04x", (cmd1[2]<<8)+cmd1[3], (Demod.output[8]<<8)+Demod.output[9]);
 	// Do not return;, let's go on... (we should retry, maybe ?)
 	}
-	Dbprintf("Tag UID (64 bits): %08x %08x",
+	Dbprintf("[+] Tag UID (64 bits): %08x %08x",
 			(Demod.output[7]<<24) + (Demod.output[6]<<16) + (Demod.output[5]<<8) + Demod.output[4],
 			(Demod.output[3]<<24) + (Demod.output[2]<<16) + (Demod.output[1]<<8) + Demod.output[0]);
 
 	// Now loop to read all 16 blocks, address from 0 to last block
-	Dbprintf("Tag memory dump, block 0 to %d", numofblocks);
+	Dbprintf("[+] Tag memory dump, block 0 to %d", numofblocks);
 	cmd1[0] = 0x08;
 	i = 0x00;
 	++numofblocks;
 	
 	for (;;) {
 		if (i == numofblocks) {
-			DbpString("System area block (0xff):");
+			DbpString("System area block (0xFF):");
 			i = 0xff;
 		}
 		cmd1[1] = i;
-		ComputeCrc14443(CRC_14443_B, cmd1, 2, &cmd1[2], &cmd1[3]);
+		AddCrc14B(cmd1, 2);
 		CodeAndTransmit14443bAsReader(cmd1, sizeof(cmd1)); //no
 		GetTagSamplesFor14443bDemod(); //no
 		
 		if (Demod.len != 6) { // Check if we got an answer from the tag
-			DbpString("Expected 6 bytes from tag, got less...");
+			DbpString("[!] expected 6 bytes from tag, got less...");
 			return;
 		}
 		// The check the CRC of the answer (use cmd1 as temporary variable):
-		ComputeCrc14443(CRC_14443_B, Demod.output, 4, &cmd1[2], &cmd1[3]);
-			if(cmd1[2] != Demod.output[4] || cmd1[3] != Demod.output[5]) {
-			Dbprintf("CRC Error reading block! Expected: %04x got: %04x",
+		
+		if (!check_crc(CRC_14443_B, Demod.output, Demod.len)) {
+			Dbprintf("[!] CRC Error reading block! Expected: %04x got: %04x",
 					(cmd1[2]<<8)+cmd1[3], (Demod.output[4]<<8)+Demod.output[5]);
 		// Do not return;, let's go on... (we should retry, maybe ?)
 		}
@@ -1485,9 +1467,8 @@ void ReadSTMemoryIso14443b(uint8_t numofblocks)
 	set_tracing(false);
 }
 
-
-static void iso1444b_setup_snoop(void){
-	if (MF_DBGLEVEL > 3) Dbprintf("iso1443b_setup_snoop Enter");
+static void iso1444b_setup_sniff(void){
+	if (MF_DBGLEVEL > 3) Dbprintf("iso1443b_setup_sniff Enter");
 	LEDsoff();
 	FpgaDownloadAndGo(FPGA_BITSTREAM_HF);
 	BigBuf_free();
@@ -1501,11 +1482,11 @@ static void iso1444b_setup_snoop(void){
 
 	if (MF_DBGLEVEL > 1) {
 		// Print debug information about the buffer sizes
-		Dbprintf("Snooping buffers initialized:");
-		Dbprintf("  Trace: %i bytes", BigBuf_max_traceLen());
-		Dbprintf("  Reader -> tag: %i bytes", MAX_FRAME_SIZE);
-		Dbprintf("  tag -> Reader: %i bytes", MAX_FRAME_SIZE);
-		Dbprintf("  DMA: %i bytes", ISO14443B_DMA_BUFFER_SIZE);
+		Dbprintf("[+] Sniff buffers initialized:");
+		Dbprintf("[+]   trace: %i bytes", BigBuf_max_traceLen());
+		Dbprintf("[+]   reader -> tag: %i bytes", MAX_FRAME_SIZE);
+		Dbprintf("[+]   tag -> reader: %i bytes", MAX_FRAME_SIZE);
+		Dbprintf("[+]   DMA: %i bytes", ISO14443B_DMA_BUFFER_SIZE);
 	}
 
 	// connect Demodulated Signal to ADC:
@@ -1520,7 +1501,8 @@ static void iso1444b_setup_snoop(void){
 
 	// Start the SSP timer
 	StartCountSspClk();
-	if (MF_DBGLEVEL > 3) Dbprintf("iso1443b_setup_snoop Exit");
+
+	if (MF_DBGLEVEL > 3) Dbprintf("iso1443b_setup_sniff Exit");
 }
 
 //=============================================================================
@@ -1540,7 +1522,7 @@ static void iso1444b_setup_snoop(void){
  * DMA Buffer - ISO14443B_DMA_BUFFER_SIZE
  * Demodulated samples received - all the rest
  */
-void RAMFUNC SnoopIso14443b(void) {
+void RAMFUNC SniffIso14443b(void) {
 
 	uint32_t time_0 = 0, time_start = 0, time_stop = 0;
 	int ci = 0, cq = 0;
@@ -1551,7 +1533,7 @@ void RAMFUNC SnoopIso14443b(void) {
 	bool TagIsActive = false;
 	bool ReaderIsActive = false;
 
-	iso1444b_setup_snoop();
+	iso1444b_setup_sniff();
 	
 	// The DMA buffer, used to stream samples from the FPGA
 	int8_t *dmaBuf = (int8_t*) BigBuf_malloc(ISO14443B_DMA_BUFFER_SIZE);
@@ -1559,7 +1541,7 @@ void RAMFUNC SnoopIso14443b(void) {
 
 	// Setup and start DMA.
 	if ( !FpgaSetupSscDma((uint8_t*) dmaBuf, ISO14443B_DMA_BUFFER_SIZE) ){
-		if (MF_DBGLEVEL > 1) Dbprintf("FpgaSetupSscDma failed. Exiting"); 
+		if (MF_DBGLEVEL > 1) Dbprintf("[!] FpgaSetupSscDma failed. Exiting"); 
 		BigBuf_free();
 		return;
 	}
@@ -1580,12 +1562,12 @@ void RAMFUNC SnoopIso14443b(void) {
 			AT91C_BASE_PDC_SSC->PDC_RNPR = (uint32_t) dmaBuf;
 			AT91C_BASE_PDC_SSC->PDC_RNCR = ISO14443B_DMA_BUFFER_SIZE;		
 		}
-		
+
+		// no need to try decoding reader data if the tag is sending
 		if (!TagIsActive) {		
 		
 			LED_A_INV();
-			
-			// no need to try decoding reader data if the tag is sending
+		
 			if (Handle14443bReaderUartBit(ci & 0x01)) {
 				time_stop = GetCountSspClk() - time_0;
 				LogTrace(Uart.output, Uart.byteCnt, time_start, time_stop, NULL, true);
@@ -1606,8 +1588,9 @@ void RAMFUNC SnoopIso14443b(void) {
 			ReaderIsActive = (Uart.state > STATE_GOT_FALLING_EDGE_OF_SOF);
 		}
 		
+		// no need to try decoding tag data if the reader is sending - and we cannot afford the time
 		if (!ReaderIsActive) {
-			// no need to try decoding tag data if the reader is sending - and we cannot afford the time
+
 			// is this | 0x01 the error?   & 0xfe  in https://github.com/Proxmark/proxmark3/issues/103
 			// LSB is a fpga signal bit.
 			if (Handle14443bTagSamplesDemod(ci >> 1, cq >> 1)) {				
@@ -1623,9 +1606,9 @@ void RAMFUNC SnoopIso14443b(void) {
 	}
 	
 	if (MF_DBGLEVEL >= 2) {
-		DbpString("Sniff statistics:");
-		Dbprintf("  Uart State: %x  ByteCount: %i  ByteCountMax: %i", Uart.state,  Uart.byteCnt,  Uart.byteCntMax);
-		Dbprintf("  Trace length: %i", BigBuf_get_traceLen());
+		DbpString("[+] Sniff statistics:");
+		Dbprintf("[+]  uart State: %x  ByteCount: %i  ByteCountMax: %i", Uart.state,  Uart.byteCnt,  Uart.byteCntMax);
+		Dbprintf("[+]  trace length: %i", BigBuf_get_traceLen());
 	}
 	
 	switch_off();
@@ -1646,8 +1629,7 @@ void iso14b_set_trigger(bool enable) {
  * none
  *
  */
-void SendRawCommand14443B_Ex(UsbCommand *c)
-{
+void SendRawCommand14443B_Ex(UsbCommand *c) {
 	iso14b_command_t param = c->arg[0];
 	size_t len = c->arg[1] & 0xffff;
 	uint8_t *cmd = c->d.asBytes;
@@ -1693,7 +1675,7 @@ void SendRawCommand14443B_Ex(UsbCommand *c)
 	
 	if ((param & ISO14B_RAW) == ISO14B_RAW) {
 		if((param & ISO14B_APPEND_CRC) == ISO14B_APPEND_CRC) {
-			AppendCrc14443b(cmd, len);
+			AddCrc14B(cmd, len);
 			len += 2;
 		}
 	

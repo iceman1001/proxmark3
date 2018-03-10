@@ -11,11 +11,6 @@
 
 #define MAX_ARGS 20
 
-int uerr(char *msg){
-	PrintAndLog("%s",msg);
-	return 0;
-}
-
 int split(char *str, char *arr[MAX_ARGS]){
     int beginIndex = 0;
     int endIndex;
@@ -37,7 +32,6 @@ int split(char *str, char *arr[MAX_ARGS]){
         char *tmp = calloc(len + 1, sizeof(char));
         memcpy(tmp, &str[beginIndex], len);
         arr[wordCnt++] = tmp;
-        //PrintAndLog("cnt: %d, %s",wordCnt-1, arr[wordCnt-1]);
         beginIndex = endIndex;
         if (wordCnt == maxWords)
             break;
@@ -59,7 +53,6 @@ int CmdCrc(const char *Cmd)
 	} else {
 		reveng_main(argc, argv);
 	}
-	//PrintAndLog("DEBUG argc: %d, %s %s Cmd: %s",argc, argv[0], Cmd2, Cmd);
 	for(int i = 0; i < argc; ++i) {
 		free(argv[i]);
 	}
@@ -89,17 +82,19 @@ int GetModels(char *Models[], int *count, uint8_t *width){
 	int Cnt = 0;
 	if (width[0] == 0) { //reveng -D
 		*count = mcount();
-		if(!*count)
-			return uerr("no preset models available");
-
-		for(int mode = 0; mode < *count; ++mode) {
+		if (!*count){
+			PrintAndLogEx(WARNING, "no preset models available");
+			return 0;
+		}
+		for (int mode = 0; mode < *count; ++mode) {
 			mbynum(&model, mode);
 			mcanon(&model);
-			size_t size = (model.name && *model.name) ? strlen(model.name) : 6;
+			size_t size = (model.name && *model.name) ? strlen(model.name) : 7;
 			char *tmp = calloc(size+1, sizeof(char));
-			if (tmp==NULL)
-				return uerr("out of memory?");
-
+			if (tmp==NULL){
+				PrintAndLogEx(WARNING, "out of memory?");
+				return 0;
+			}
 			memcpy(tmp, model.name, size);
 			Models[mode] = tmp;
 			width[mode] = plen(model.spoly);
@@ -107,20 +102,21 @@ int GetModels(char *Models[], int *count, uint8_t *width){
 		mfree(&model);
 	} else { //reveng -s
 
-		if(~model.flags & P_MULXN)
-			return uerr("cannot search for non-Williams compliant models");
-
+		if (~model.flags & P_MULXN){	
+			 PrintAndLogEx(WARNING, "cannot search for non-Williams compliant models");
+			 return 0;
+		}
 		praloc(&model.spoly, (unsigned long)width[0]);
 		praloc(&model.init, (unsigned long)width[0]);
 		praloc(&model.xorout, (unsigned long)width[0]);
 
-		if(!plen(model.spoly))
+		if (!plen(model.spoly))
 			palloc(&model.spoly, (unsigned long)width[0]);
 		else
 			width[0] = (uint8_t)plen(model.spoly);
 
 		/* special case if qpoly is zero, search to end of range */
-		if(!ptst(qpoly))
+		if (!ptst(qpoly))
 			rflags &= ~R_HAVEQ;
 
 		/* if endianness not specified, try
@@ -135,7 +131,7 @@ int GetModels(char *Models[], int *count, uint8_t *width){
 			do {
 				psets = mcount();
 
-				while(psets) {
+				while (psets) {
 					mbynum(&pset, --psets);
 					
 					/* skip if different width, or refin or refout don't match */
@@ -171,11 +167,11 @@ int GetModels(char *Models[], int *count, uint8_t *width){
 						/* the selected model solved all arguments */
 						mcanon(&pset);
 						
-						size_t size = (pset.name && *pset.name) ? strlen(pset.name) : 6;
-						//PrintAndLog("Size: %d, %s, count: %d",size,pset.name, Cnt);
+						size_t size = (pset.name && *pset.name) ? strlen(pset.name) : 7;
+						//PrintAndLogEx(NORMAL, "Size: %d, %s, count: %d",size,pset.name, Cnt);
 						char *tmp = calloc(size+1, sizeof(char));
 						if (tmp == NULL){
-							PrintAndLog("out of memory?");
+							PrintAndLogEx(WARNING, "out of memory?");
 							return 0;
 						}
 						width[Cnt] = width[0];
@@ -203,9 +199,10 @@ int GetModels(char *Models[], int *count, uint8_t *width){
 				pfree(qptr);
 			}
 		}
-		if (!(model.flags & P_REFIN) != !(model.flags & P_REFOUT))
-			return uerr("cannot search for crossed-endian models");
-
+		if (!(model.flags & P_REFIN) != !(model.flags & P_REFOUT)){		
+			PrintAndLogEx(WARNING, "cannot search for crossed-endian models");
+			return 0;
+		}
 		pass = 0;
 		do {
 			mptr = candmods = reveng(&model, qpoly, rflags, args, apolys);
@@ -228,10 +225,12 @@ int GetModels(char *Models[], int *count, uint8_t *width){
 			pfree(qptr);
 		}
 		free(apolys);
-		if (~uflags & C_RESULT)
-			return uerr("no models found");
-		
 		mfree(&model);
+		
+		if (~uflags & C_RESULT){
+			PrintAndLogEx(WARNING, "no models found");
+			return 0;
+		}
 	}
 	return 1;
 }
@@ -262,12 +261,13 @@ int RunModel(char *inModel, char *inHexStr, bool reverse, char endian, char *res
 	SETBMP();
 	//set model
 	if (!(c = mbynam(&model, inModel))) {
-		PrintAndLog("error: preset model '%s' not found.  Use reveng -D to list presets.", inModel);
+		PrintAndLogEx(WARNING, "error: preset model '%s' not found.  Use reveng -D to list presets.", inModel);
 		return 0;
 	}
-	if (c < 0)
-		return uerr("no preset models available");
-
+	if (c < 0){
+		PrintAndLogEx(WARNING, "no preset models available");
+		return 0;
+	}
 	rflags |= R_HAVEP | R_HAVEI | R_HAVERI | R_HAVERO | R_HAVEX;
 	
 	//set flags
@@ -358,6 +358,30 @@ int RunModel(char *inModel, char *inHexStr, bool reverse, char endian, char *res
 	pfree(&apoly);
 	return 1;
 }
+
+//test call to RunModel
+int CmdrevengTestC(const char *Cmd){
+	int cmdp = 0;
+	char inModel[30] = {0x00};
+	char inHexStr[30] = {0x00};
+	char result[30];
+	int dataLen;
+	char endian = 0;
+	dataLen = param_getstr(Cmd, cmdp++, inModel, sizeof(inModel));
+	if (dataLen < 4) return 0;
+	dataLen = param_getstr(Cmd, cmdp++, inHexStr, sizeof(inHexStr));
+	if (dataLen < 4) return 0;
+	bool reverse = (param_get8(Cmd, cmdp++)) ? true : false;
+	endian = param_getchar(Cmd, cmdp++); 
+
+	//PrintAndLogEx(NORMAL, "mod: %s, hex: %s, rev %d", inModel, inHexStr, reverse);
+	int ans = RunModel(inModel, inHexStr, reverse, endian, result);
+	if (!ans) return 0;
+	
+	PrintAndLogEx(SUCCESS, "result: %s",result);
+	return 1;
+}
+
 //returns a calloced string (needs to be freed)
 char *SwapEndianStr(const char *inStr, const size_t len, const uint8_t blockSize){
 	char *tmp = calloc(len+1, sizeof(char));
@@ -373,12 +397,14 @@ char *SwapEndianStr(const char *inStr, const size_t len, const uint8_t blockSize
 // takes hex string in and searches for a matching result (hex string must include checksum)
 int CmdrevengSearch(const char *Cmd){
 	char inHexStr[50] = {0x00};
-	int dataLen = param_getstr(Cmd, 0, inHexStr);
+	int dataLen = param_getstr(Cmd, 0, inHexStr, sizeof(inHexStr));
 	if (dataLen < 4) return 0;
 
+	// these two arrays, must match preset size.
 	char *Models[102];
+	uint8_t width[102] = {0};
 	int count = 0;
-	uint8_t width[80] = {0};
+
 	uint8_t crcChars = 0;
 	char result[30];
 	char revResult[30];
@@ -404,19 +430,19 @@ int CmdrevengSearch(const char *Cmd){
 		char *outHex = calloc(dataLen-crcChars+1, sizeof(char));
 		memcpy(outHex, inHexStr, dataLen-crcChars);
 
-		// PrintAndLog("DEBUG: dataLen: %d, crcChars: %d, Model: %s, CRC: %s, width: %d, outHex: %s",dataLen, crcChars, Models[i], inCRC, width[i], outHex);
+		// PrintAndLogEx(DEBUG, "DEBUG: dataLen: %d, crcChars: %d, Model: %s, CRC: %s, width: %d, outHex: %s",dataLen, crcChars, Models[i], inCRC, width[i], outHex);
 		ans = RunModel(Models[i], outHex, false, 0, result);
 		if (ans) {
 			// test for match
-			if (memcmp(result, inCRC, crcChars)==0){
-				PrintAndLog("\nFound a possible match!\nModel: %s\nValue: %s\n",Models[i], result);
+			if (memcmp(result, inCRC, crcChars) == 0){
+				PrintAndLogEx(NORMAL, "\n"); PrintAndLogEx(SUCCESS, "found possible match\n[+] model: %s | value: %s\n", Models[i], result);
 				//optional - stop searching if found...
 				found = true;
 			} else {
 				if (crcChars > 2){
 					char *swapEndian = SwapEndianStr(result, crcChars, crcChars);
-					if (memcmp(swapEndian, inCRC, crcChars)==0){
-						PrintAndLog("\nFound a possible match!\nModel: %s\nValue EndianSwapped: %s\n",Models[i], swapEndian);
+					if (memcmp(swapEndian, inCRC, crcChars) == 0){
+						PrintAndLogEx(NORMAL, "\n"); PrintAndLogEx(SUCCESS, "found possible match\n[+] model: %s | value endian swapped: %s\n", Models[i], swapEndian);
 						// optional - stop searching if found...
 						found = true;
 					}
@@ -424,33 +450,30 @@ int CmdrevengSearch(const char *Cmd){
 				}
 			}
 		}
-		
-		// if (!found){
-			ans = RunModel(Models[i], outHex, true, 0, revResult);
-			if (ans) {
-				// test for match
-				if (memcmp(revResult, inCRC, crcChars)==0){
-					PrintAndLog("\nFound a possible match!\nModel Reversed: %s\nValue: %s\n",Models[i], revResult);
-					// optional - stop searching if found...
-					found = true;
-				} else {
-					if (crcChars > 2){
-						char *swapEndian = SwapEndianStr(revResult, crcChars, crcChars);
-						if (memcmp(swapEndian, inCRC, crcChars)==0){
-							PrintAndLog("\nFound a possible match!\nModel Reversed: %s\nValue EndianSwapped: %s\n",Models[i], swapEndian);
-							// optional - stop searching if found...
-							found = true;
-						}
-						free(swapEndian);
+		ans = RunModel(Models[i], outHex, true, 0, revResult);
+		if (ans) {
+			// test for match
+			if (memcmp(revResult, inCRC, crcChars) == 0){
+				PrintAndLogEx(NORMAL, "\n"); PrintAndLogEx(SUCCESS, "found possible match\n[+] model reversed: %s | value: %s\n", Models[i], revResult);
+				// optional - stop searching if found...
+				found = true;
+			} else {
+				if (crcChars > 2){
+					char *swapEndian = SwapEndianStr(revResult, crcChars, crcChars);
+					if (memcmp(swapEndian, inCRC, crcChars) == 0){
+						PrintAndLogEx(NORMAL, "\n"); PrintAndLogEx(SUCCESS, "found possible match\n[+] model reversed: %s | value endian swapped: %s\n", Models[i], swapEndian);
+						// optional - stop searching if found...
+						found = true;
 					}
+					free(swapEndian);
 				}
 			}
-		// }
+		}
 		free(inCRC);
 		free(outHex);
 		free(Models[i]);
 	}
 	
-	if (!found) PrintAndLog("\nNo matches found\n");
+	if (!found) PrintAndLogEx(NORMAL, "\n[-] no matches found\n");
 	return 1;
 }

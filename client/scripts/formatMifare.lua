@@ -4,7 +4,7 @@ local bin = require('bin')
 local lib14a = require('read14a')
 local utils = require('utils')
 
-example =[[
+example = [[
     -- generate commands
 	1. script run formatMifare
 	
@@ -14,11 +14,13 @@ example =[[
 	-- generate commands and excute them against card.
 	3. script run formatMifare -x
 ]]
-author = "Iceman"
+copyright = ''
+version = ''
+author = 'Iceman'
 usage = [[
    script run formatMifare -k <key> -n <key> -a <access> -x   
 ]]
-desc =[[
+desc = [[
 This script will generate 'hf mf wrbl' commands for each block to format a Mifare card.
 
 Alla datablocks gets 0x00
@@ -66,6 +68,9 @@ end
 --- 
 -- Usage help
 function help()
+	print(copyright)
+	print(author)
+	print(version)	
 	print(desc)
 	print("Example usage")
 	print(example)
@@ -81,7 +86,7 @@ end
 --
 -- Read information from a card
 function GetCardInfo()
-	result, err = lib14a.read1443a(false, true)
+	result, err = lib14a.read(false, true)
 	if not result then
 		print(err)
 		return

@@ -22,7 +22,7 @@
  *
  * This is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as published
- * by the Free Software Foundation.
+ * by the Free Software Foundation, or, at your option, any later version. 
  *
  * This file is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -31,7 +31,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with loclass.  If not, see <http://www.gnu.org/licenses/>.
- * 
  * 
  * 
  ****************************************************************************/
@@ -170,7 +169,7 @@ void printarr(char * name, uint8_t* arr, int len)
 		cx += snprintf(output+cx,outsize-cx,"0x%02x,",*(arr+i));//5 bytes per byte
 	}
 	cx += snprintf(output+cx,outsize-cx,"};");
-	prnlog(output);
+	PrintAndLogDevice(NORMAL, output);
 	free(output);
 }
 
@@ -188,7 +187,7 @@ void printvar(char * name, uint8_t* arr, int len)
 		cx += snprintf(output+cx,outsize-cx,"%02x",*(arr+i));//2 bytes per byte
 	}
 
-	prnlog(output);
+	PrintAndLogDevice(NORMAL, output);
 	free(output);
 }
 
@@ -208,7 +207,7 @@ void printarr_human_readable(char * title, uint8_t* arr, int len)
 			cx += snprintf(output+cx,outsize-cx,"\n%02x| ", i );
 		cx += snprintf(output+cx,outsize-cx, "%02x ",*(arr+i));
 	}
-	prnlog(output);
+	PrintAndLogDevice(NORMAL, output);
 	free(output);
 }
 
@@ -232,14 +231,14 @@ int testBitStream()
 	}
 	if(memcmp(input, output, sizeof(input)) == 0)
 	{
-		prnlog("    Bitstream test 1 ok");
+		PrintAndLogDevice(SUCCESS, "    Bitstream test 1 ok");
 	}else
 	{
-		prnlog("    Bitstream test 1 failed");
+		PrintAndLogDevice(FAILED, "    Bitstream test 1 failed");
 		uint8_t i;
 		for(i = 0 ; i < sizeof(input) ; i++)
 		{
-			prnlog("    IN %02x, OUT %02x", input[i], output[i]);
+			PrintAndLogDevice(NORMAL, "    IN %02x, OUT %02x", input[i], output[i]);
 		}
 		return 1;
 	}
@@ -266,23 +265,24 @@ int testReversedBitstream()
 	}
 	if(memcmp(input, output, sizeof(input)) == 0)
 	{
-		prnlog("    Bitstream test 2 ok");
+		PrintAndLogDevice(SUCCESS, "    Bitstream test 2 ok");
 	}else
 	{
-		prnlog("    Bitstream test 2 failed");
+		PrintAndLogDevice(FAILED, "    Bitstream test 2 failed");
 		uint8_t i;
 		for(i = 0 ; i < sizeof(input) ; i++)
 		{
-			prnlog("    IN %02x, MIDDLE: %02x, OUT %02x", input[i],reverse[i], output[i]);
+			PrintAndLogDevice(NORMAL, "    IN %02x, MIDDLE: %02x, OUT %02x", input[i],reverse[i], output[i]);
 		}
 		return 1;
 	}
 	return 0;
 }
 
+
 int testCipherUtils(void)
 {
-	prnlog("[+] Testing some internals...");
+	PrintAndLogDevice(INFO, "Testing some internals...");
 	int retval = 0;
 	retval |= testBitStream();
 	retval |= testReversedBitstream();

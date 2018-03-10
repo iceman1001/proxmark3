@@ -258,16 +258,17 @@ ISO 7816-4 Basic interindustry commands. For command APDU's.
 #define TOPAZ_WRITE_NE8					0x1B	// Write-no-erase (eight bytes)
 
 
-// Definetions of which protocol annotations there are available
-#define ISO_14443A	0
-#define ICLASS		1
-#define ISO_14443B	2
-#define TOPAZ		3
-#define ISO_7816_4  4
-#define MFDES		5
-#define LEGIC		6
-#define ISO_15693	7
-#define FELICA		8
+// Definitions of which protocol annotations there are available
+#define ISO_14443A	 0
+#define ICLASS		 1
+#define ISO_14443B	 2
+#define TOPAZ		 3
+#define ISO_7816_4   4
+#define MFDES		 5
+#define LEGIC		 6
+#define ISO_15693	 7
+#define FELICA		 8
+#define PROTO_MIFARE 9
 
 //-- Picopass fuses
 #define FUSE_FPERS   0x80
@@ -435,6 +436,104 @@ uint32_t GetT55xxClockBit(uint32_t clock);
 #define EM4x05_READ_AFTER_WRITE       1<<22
 #define EM4x05_DISABLE_ALLOWED        1<<23
 #define EM4x05_READER_TALK_FIRST      1<<24
+
+
+// FeliCa protocol
+#define FELICA_POLL_REQ 0x00
+#define FELICA_POLL_ACK 0x01
+
+#define FELICA_REQSRV_REQ 0x02
+#define FELICA_REQSRV_ACK 0x03
+
+#define FELICA_RDBLK_REQ 0x06
+#define FELICA_RDBLK_ACK 0x07
+
+#define FELICA_WRTBLK_REQ 0x08
+#define FELICA_WRTBLK_ACK 0x09
+
+#define FELICA_SRCHSYSCODE_REQ 0x0a
+#define FELICA_SRCHSYSCODE_ACK 0x0b
+
+#define FELICA_REQSYSCODE_REQ 0x0c
+#define FELICA_REQSYSCODE_ACK 0x0d
+
+#define FELICA_AUTH1_REQ 0x10
+#define FELICA_AUTH1_ACK 0x11
+
+#define FELICA_AUTH2_REQ 0x12
+#define FELICA_AUTH2_ACK 0x13
+
+#define FELICA_RDSEC_REQ 0x14
+#define FELICA_RDSEC_ACK 0x15
+
+#define FELICA_WRTSEC_REQ 0x16
+#define FELICA_WRTSEC_ACK 0x17
+
+#define FELICA_REQSRV2_REQ 0x32
+#define FELICA_REQSRV2_ACK 0x33
+
+#define FELICA_GETSTATUS_REQ 0x38
+#define FELICA_GETSTATUS_ACK 0x39
+
+#define FELICA_OSVER_REQ 0x3c
+#define FELICA_OSVER_ACK 0x3d
+
+#define FELICA_RESET_MODE_REQ 0x3e
+#define FELICA_RESET_MODE_ACK 0x3f
+
+#define FELICA_AUTH1V2_REQ 0x40
+#define FELICA_AUTH1V2_ACK 0x41
+
+#define FELICA_AUTH2V2_REQ 0x42
+#define FELICA_AUTH2V2_ACK 0x43
+
+#define FELICA_RDSECV2_REQ 0x44
+#define FELICA_RDSECV2_ACK 0x45
+#define FELICA_WRTSECV2_REQ 0x46
+#define FELICA_WRTSECV2_ACK 0x47
+
+#define FELICA_UPDATE_RNDID_REQ 0x4C
+#define FELICA_UPDATE_RNDID_ACK 0x4D
+
+// FeliCa SYSTEM list
+#define SYSTEMCODE_ANY  		0xffff // ANY
+#define SYSTEMCODE_FELICA_LITE 	0x88b4 // FeliCa Lite
+#define SYSTEMCODE_COMMON 		0xfe00 // Common
+#define SYSTEMCODE_EDY			0xfe00 // Edy
+#define SYSTEMCODE_CYBERNE		0x0003 // Cyberne
+#define SYSTEMCODE_SUICA		0x0003 // Suica
+#define SYSTEMCODE_PASMO		0x0003 // Pasmo
+    
+//FeliCa Service list Suica/pasmo (little endian)
+#define SERVICE_SUICA_INOUT				0x108f // SUICA/PASMO
+#define SERVICE_SUICA_HISTORY			0x090f // SUICA/PASMO
+#define SERVICE_FELICA_LITE_READONLY	0x0b00 // FeliCa Lite RO
+#define SERVICE_FELICA_LITE_READWRITE	0x0900 // FeliCa Lite RW
+
+// Calypso protocol
+#define CALYPSO_GET_RESPONSE   0xC0
+#define CALYPSO_SELECT         0xA4
+#define CALYPSO_INVALIDATE     0x04
+#define CALYPSO_REHABILITATE   0x44
+#define CALYPSO_APPEND_RECORD  0xE2
+#define CALYPSO_DECREASE       0x30
+#define CALYPSO_INCREASE       0x32
+#define CALYPSO_READ_BINARY    0xB0
+#define CALYPSO_READ_RECORD    0xB2
+#define CALYPSO_UPDATE_BINARY  0xD6
+#define CALYPSO_UPDATE_RECORD  0xDC
+#define CALYPSO_WRITE_RECORD   0xD2
+#define CALYPSO_OPEN_SESSION   0x8A
+#define CALYPSO_CLOSE_SESSION  0x8E
+#define CALYPSO_GET_CHALLENGE  0x84
+#define CALYPSO_CHANGE_PIN     0xD8
+#define CALYPSO_VERIFY_PIN     0x20
+#define CALYPSO_SV_GET         0x7C
+#define CALYPSO_SV_DEBIT       0xBA
+#define CALYPSO_SV_RELOAD      0xB8
+#define CALYPSO_SV_UN_DEBIT    0xBC
+#define CALYPSO_SAM_SV_DEBIT   0x54
+#define CALYPSO_SAM_SV_RELOAD  0x56
 
 // iclass / picopass chip config structures and shared routines
 typedef struct {

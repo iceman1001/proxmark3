@@ -28,7 +28,8 @@
 #include "cmdhfmfhard.h"
 #include "mifarehost.h"
 #include "util_posix.h" // msclock
-
+#include "mifaredefault.h"  // mifare default key array
+#include "cmdhf14a.h" // dropfield
 
 extern int CmdHFMF(const char *Cmd);
 
@@ -42,10 +43,10 @@ extern int CmdHF14AMfRestore(const char* cmd);
 extern int CmdHF14AMfWrBl(const char* cmd);
 extern int CmdHF14AMfUWrBl(const char* cmd);
 extern int CmdHF14AMfChk(const char* cmd);
-extern int CmdHF14AMifare(const char* cmd);
+extern int CmdHF14ADarkside(const char* cmd);
 extern int CmdHF14AMfNested(const char* cmd);
 extern int CmdHF14AMfNestedHard(const char *Cmd);
-extern int CmdHF14AMfSniff(const char* cmd);
+//extern int CmdHF14AMfSniff(const char* cmd);
 extern int CmdHF14AMf1kSim(const char* cmd);
 extern int CmdHF14AMfKeyBrute(const char *Cmd);
 extern int CmdHF14AMfEClear(const char* cmd);
@@ -63,6 +64,7 @@ extern int CmdHF14AMfCLoad(const char* cmd);
 extern int CmdHF14AMfCSave(const char* cmd);
 extern int CmdHf14MfDecryptBytes(const char *Cmd);
 extern int CmdHf14AMfSetMod(const char *Cmd);
+extern int CmdHf14AMfNack(const char *Cmd);
 
 void showSectorTable(void);
 void readerAttack(nonces_t data, bool setEmulatorMem, bool verbose);

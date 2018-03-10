@@ -24,13 +24,11 @@
 
 static int CmdHelp(const char *Cmd);
 
-static void lookupChipID(uint32_t iChipID, uint32_t mem_used)
-{
+static void lookupChipID(uint32_t iChipID, uint32_t mem_used) {
 	char asBuff[120];
 	memset(asBuff, 0, sizeof(asBuff));
-	uint32_t mem_avail = 0;
-	
-	PrintAndLog(" [ Hardware ] ");
+	uint32_t mem_avail = 0;	
+	PrintAndLogEx(NORMAL, " [ Hardware ] ");
 	
 	switch(iChipID) {
 		case 0x270B0A40: sprintf(asBuff,"AT91SAM7S512 Rev A"); break;
@@ -52,14 +50,14 @@ static void lookupChipID(uint32_t iChipID, uint32_t mem_used)
 		case 0x27050241: sprintf(asBuff,"AT9SAM7S161 Rev A"); break;
 		case 0x27050240: sprintf(asBuff,"AT91SAM7S16 Rev A"); break;
 	}
-	PrintAndLog("  --= uC: %s",asBuff);
+	PrintAndLogEx(NORMAL, "  --= uC: %s",asBuff);
 	switch( (iChipID & 0xE0) >> 5) {
 		case 1: sprintf(asBuff,"ARM946ES");	break;
 		case 2:	sprintf(asBuff,"ARM7TDMI");	break;
 		case 4:	sprintf(asBuff,"ARM920T"); break;
 		case 5:	sprintf(asBuff,"ARM926EJS"); break;
 	}
-	PrintAndLog("  --= Embedded Processor: %s",asBuff);
+	PrintAndLogEx(NORMAL, "  --= Embedded Processor: %s",asBuff);
 	switch( (iChipID & 0xF00) >> 8) {
 		case 0:  mem_avail = 0; break;
 		case 1:	 mem_avail = 8; break;
@@ -77,7 +75,7 @@ static void lookupChipID(uint32_t iChipID, uint32_t mem_used)
 	if ( mem_avail > 0 ) 
 		mem_left = (mem_avail * 1024) - mem_used;
 	
-	PrintAndLog("  --= Nonvolatile Program Memory Size: %uK bytes, Used: %u bytes (%2.0f\%) Free: %u bytes (%2.0f\%)", 
+	PrintAndLogEx(NORMAL, "  --= Nonvolatile Program Memory Size: %uK bytes, Used: %u bytes (%2.0f\%) Free: %u bytes (%2.0f\%)", 
 				mem_avail, 
 				mem_used, 
 				mem_avail == 0 ? 0.0f : (float)mem_used/(mem_avail*1024)*100,
@@ -97,7 +95,7 @@ static void lookupChipID(uint32_t iChipID, uint32_t mem_used)
 		case 12: sprintf(asBuff,"1024K bytes");	break;
 		case 14: sprintf(asBuff,"2048K bytes"); break;
 	}
-	PrintAndLog("  --= Second Nonvolatile Program Memory Size: %s",asBuff);
+	PrintAndLogEx(NORMAL, "  --= Second Nonvolatile Program Memory Size: %s",asBuff);
 	switch( (iChipID & 0xF0000) >> 16) {
 		case 1:  sprintf(asBuff,"1K bytes"); break;
 		case 2:  sprintf(asBuff,"2K bytes"); break;
@@ -115,7 +113,7 @@ static void lookupChipID(uint32_t iChipID, uint32_t mem_used)
 		case 14: sprintf(asBuff,"96K bytes"); break;
 		case 15: sprintf(asBuff,"512K bytes");break;
 	}
-	PrintAndLog("  --= Internal SRAM Size: %s",asBuff);
+	PrintAndLogEx(NORMAL, "  --= Internal SRAM Size: %s",asBuff);
 	switch( (iChipID & 0xFF00000) >> 20) {
 		case 0x19: sprintf(asBuff,"AT91SAM9xx Series"); break;
 		case 0x29: sprintf(asBuff,"AT91SAM9XExx Series"); break;
@@ -137,7 +135,7 @@ static void lookupChipID(uint32_t iChipID, uint32_t mem_used)
 		case 0x92: sprintf(asBuff,"AT91x92 Series"); break;
 		case 0xF0: sprintf(asBuff,"AT75Cxx Series"); break;
 	}
-	PrintAndLog("  --= Architecture Identifier: %s",asBuff);
+	PrintAndLogEx(NORMAL, "  --= Architecture Identifier: %s",asBuff);
 	switch( (iChipID & 0x70000000) >> 28 ) {
 		case 0: sprintf(asBuff,"ROM"); break;
 		case 1: sprintf(asBuff,"ROMless or on-chip Flash");	break;
@@ -145,11 +143,10 @@ static void lookupChipID(uint32_t iChipID, uint32_t mem_used)
 		case 3:	sprintf(asBuff,"ROM and Embedded Flash Memory\nNVPSIZ is ROM size\nNVPSIZ2 is Flash size");	break;
 		case 4:	sprintf(asBuff,"SRAM emulating ROM"); break;		
 	}
-	PrintAndLog("  --= Nonvolatile Program Memory Type: %s",asBuff);
+	PrintAndLogEx(NORMAL, "  --= Nonvolatile Program Memory Type: %s",asBuff);
 }
 
-int CmdDetectReader(const char *Cmd)
-{
+int CmdDetectReader(const char *Cmd) {
 	UsbCommand c = {CMD_LISTEN_READER_FIELD};
 	// 'l' means LF - 125/134 kHz
 	if(*Cmd == 'l') {
@@ -157,7 +154,7 @@ int CmdDetectReader(const char *Cmd)
 	} else if (*Cmd == 'h') {
 		c.arg[0] = 2;
 	} else if (*Cmd != '\0') {
-		PrintAndLog("use 'detectreader' or 'detectreader l' or 'detectreader h'");
+		PrintAndLogEx(NORMAL, "use 'detectreader' or 'detectreader l' or 'detectreader h'");
 		return 0;
 	}
 	clearCommandBuffer();	
@@ -166,16 +163,14 @@ int CmdDetectReader(const char *Cmd)
 }
 
 // ## FPGA Control
-int CmdFPGAOff(const char *Cmd)
-{
+int CmdFPGAOff(const char *Cmd) {
 	UsbCommand c = {CMD_FPGA_MAJOR_MODE_OFF};
 	clearCommandBuffer();
 	SendCommand(&c);
 	return 0;
 }
 
-int CmdLCD(const char *Cmd)
-{
+int CmdLCD(const char *Cmd) {
 	int i, j;
 
 	UsbCommand c = {CMD_LCD};
@@ -188,24 +183,21 @@ int CmdLCD(const char *Cmd)
 	return 0;
 }
 
-int CmdLCDReset(const char *Cmd)
-{
+int CmdLCDReset(const char *Cmd) {
 	UsbCommand c = {CMD_LCD_RESET, {strtol(Cmd, NULL, 0), 0, 0}};
 	clearCommandBuffer();
 	SendCommand(&c);
 	return 0;
 }
 
-int CmdReadmem(const char *Cmd)
-{
+int CmdReadmem(const char *Cmd) {
 	UsbCommand c = {CMD_READ_MEM, {strtol(Cmd, NULL, 0), 0, 0}};
 	clearCommandBuffer();
 	SendCommand(&c);
 	return 0;
 }
 
-int CmdReset(const char *Cmd)
-{
+int CmdReset(const char *Cmd) {
 	UsbCommand c = {CMD_HARDWARE_RESET};
 	clearCommandBuffer();
 	SendCommand(&c);
@@ -216,24 +208,21 @@ int CmdReset(const char *Cmd)
  * Sets the divisor for LF frequency clock: lets the user choose any LF frequency below
  * 600kHz.
  */
-int CmdSetDivisor(const char *Cmd)
-{
+int CmdSetDivisor(const char *Cmd) {
 	UsbCommand c = {CMD_SET_LF_DIVISOR, {strtol(Cmd, NULL, 0), 0, 0}};
 	
 	if (c.arg[0] < 19 || c.arg[0] > 255) {
-		PrintAndLog("divisor must be between 19 and 255");
+		PrintAndLogEx(NORMAL, "divisor must be between 19 and 255");
 		return 1;
 	} 
 	// 12 000 000 (12Mhz)
-	// 
 	clearCommandBuffer();
 	SendCommand(&c);
-	PrintAndLog("Divisor set, expected %.1f KHz", ((double)12000 / (c.arg[0]+1)) );
+	PrintAndLogEx(NORMAL, "Divisor set, expected %.1f KHz", ((double)12000 / (c.arg[0]+1)) );
 	return 0;
 }
 
-int CmdSetMux(const char *Cmd)
-{
+int CmdSetMux(const char *Cmd) {
 	UsbCommand c = {CMD_SET_ADC_MUX};
 	if (strcmp(Cmd, "lopkd") == 0) 		c.arg[0] = 0;
 	else if (strcmp(Cmd, "loraw") == 0)	c.arg[0] = 1;
@@ -244,70 +233,70 @@ int CmdSetMux(const char *Cmd)
 	return 0;
 }
 
-int CmdTune(const char *Cmd)
-{
+int CmdTune(const char *Cmd) {
     return CmdTuneSamples(Cmd);
 }
 
-int CmdVersion(const char *Cmd)
-{
-	clearCommandBuffer();
+int CmdVersion(const char *Cmd) {
+	
+	bool silent = (Cmd[0] == 's' || Cmd[0] ==  'S');
+	if ( silent ) 
+		return 0;
+
 	UsbCommand c = {CMD_VERSION};
 	static UsbCommand resp = {0, {0, 0, 0}};
 
 	if (resp.arg[0] == 0 && resp.arg[1] == 0) { // no cached information available
+		clearCommandBuffer();
 		SendCommand(&c);
 		if (WaitForResponseTimeout(CMD_ACK, &resp, 1000)) {
 #ifdef __WIN32
-			PrintAndLog("\nProxmark3 RFID instrument\n");
+			PrintAndLogEx(NORMAL, "\nProxmark3 RFID instrument\n");
 #else
-			PrintAndLog("\n\e[34mProxmark3 RFID instrument\e[0m\n");	
+			PrintAndLogEx(NORMAL, "\n\e[34mProxmark3 RFID instrument\e[0m\n");	
 #endif	
-			PrintAndLog((char*)resp.d.asBytes);
+			PrintAndLogEx(NORMAL, (char*)resp.d.asBytes);
 			lookupChipID(resp.arg[0], resp.arg[1]);			
 		}
 	} else {
-		PrintAndLog("[[[ Cached information ]]]\n");
+		PrintAndLogEx(NORMAL, "[[[ Cached information ]]]\n");
 #ifdef __WIN32
-			PrintAndLog("\nProxmark3 RFID instrument\n");
+			PrintAndLogEx(NORMAL, "\nProxmark3 RFID instrument\n");
 #else
-			PrintAndLog("\n\e[33mProxmark3 RFID instrument\e[0m\n");	
+			PrintAndLogEx(NORMAL, "\n\e[33mProxmark3 RFID instrument\e[0m\n");	
 #endif	
-		PrintAndLog((char*)resp.d.asBytes);
+		PrintAndLogEx(NORMAL, (char*)resp.d.asBytes);
 		lookupChipID(resp.arg[0], resp.arg[1]);
-		PrintAndLog("");
+		PrintAndLogEx(NORMAL, "");
 	}
-	printf("\n");
+	PrintAndLogEx(NORMAL, "\n");
 	return 0;
 }
 
-int CmdStatus(const char *Cmd)
-{
+int CmdStatus(const char *Cmd) {
 	uint8_t speed_test_buffer[USB_CMD_DATA_SIZE];
 	sample_buf = speed_test_buffer;
 	clearCommandBuffer();
 	UsbCommand c = {CMD_STATUS};
 	SendCommand(&c);
 	if (!WaitForResponseTimeout(CMD_ACK, &c, 1900))
-		PrintAndLog("Status command failed. USB Speed Test timed out");
+		PrintAndLogEx(NORMAL, "Status command failed. USB Speed Test timed out");
 	return 0;
 }
 
-int CmdPing(const char *Cmd)
-{
+int CmdPing(const char *Cmd) {
 	clearCommandBuffer();
 	UsbCommand resp;
 	UsbCommand c = {CMD_PING};
 	SendCommand(&c);
 	if (WaitForResponseTimeout(CMD_ACK, &resp, 1000))
-		PrintAndLog("Ping successful");
+		PrintAndLogEx(NORMAL, "Ping successful");
 	else
-		PrintAndLog("Ping failed");	
+		PrintAndLogEx(NORMAL, "Ping failed");	
 	return 0;
 }
 
-static command_t CommandTable[] = 
-{
+static command_t CommandTable[] = {
 	{"help",          CmdHelp,        1, "This help"},
 	{"detectreader",  CmdDetectReader,0, "['l'|'h'] -- Detect external reader field (option 'l' or 'h' to limit to LF or HF)"},
 	{"fpgaoff",       CmdFPGAOff,     0, "Set FPGA off"},
@@ -330,8 +319,7 @@ int CmdHW(const char *Cmd) {
 	return 0;
 }
 
-int CmdHelp(const char *Cmd)
-{
+int CmdHelp(const char *Cmd) {
 	CmdsHelp(CommandTable);
 	return 0;
 }

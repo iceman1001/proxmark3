@@ -25,7 +25,7 @@ end
 --- 
 -- This is only meant to be used when errors occur
 function oops(err)
-	print("ERROR: ",err)
+	print("[!] ERROR: ",err)
 	return nil,err
 end
 --- 
@@ -49,23 +49,28 @@ function main(args)
 		if o == "w" then width = a end
 	end
 
-	data = data or '01020304'
+	data = data or '01020304'	
+	width = width or 0
 	
 	print( string.rep('-',60) )
 	print('Bit width of CRC | '..width)
 	print('Bytes            | '..data)
 	print('')
-	print( ('%-20s| %-16s| %s'):format('Model','CRC', 'CRC reverse'))
+	print( ('%-20s| %-16s| %s'):format('Model','CRC', 'CRC reverse','bigEnd', 'bigEnd','little','little'))
 	print( string.rep('-',60) )
-	local lists = core.reveng_models(width)
+	local lists, err = core.reveng_models(width)	
+	if lists == nil then return oops(err) end
+	
 	for _,i in pairs(lists) do
-		local a1 = core.reveng_runmodel(i, data, false, '0')
-		local a2 = core.reveng_runmodel(i, data, true, '0')
-		local a3 = core.reveng_runmodel(i, data, false, 'b')
-		local a4 = core.reveng_runmodel(i, data, false, 'B')
-		local a5 = core.reveng_runmodel(i, data, false, 'l')
-		local a6 = core.reveng_runmodel(i, data, false, 'L')		
-		print( ('%-20s| %-16s| %-16s| %-16s| %-16s| %-16s| %-16s'):format(i, a1:upper(), a2:upper(),a3:upper(),a4:upper(),a5:upper(),a6:upper() ) )
+		if string.len(i) > 1 then
+			local a1 = core.reveng_runmodel(i, data, false, '0')
+			local a2 = core.reveng_runmodel(i, data, true, '0')
+			local a3 = core.reveng_runmodel(i, data, false, 'b')
+			local a4 = core.reveng_runmodel(i, data, false, 'B')
+			local a5 = core.reveng_runmodel(i, data, false, 'l')
+			local a6 = core.reveng_runmodel(i, data, false, 'L')		
+			print( ('%-20s| %-16s| %-16s| %-16s| %-16s| %-16s| %-16s'):format(i, a1:upper(), a2:upper(),a3:upper(),a4:upper(),a5:upper(),a6:upper() ) )
+		end
 	end
 end
 

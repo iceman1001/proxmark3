@@ -23,6 +23,7 @@
 
 #define ADC_CHAN_LF								4
 #define ADC_CHAN_HF								5
+#define ADC_CHAN_HF_RDV40						7
 #define ADC_MODE_PRESCALE(x)					((x) << 8)
 #define ADC_MODE_STARTUP_TIME(x)				((x) << 16)
 #define ADC_MODE_SAMPLE_HOLD_TIME(x)			((x) << 24)
@@ -58,8 +59,10 @@
 #define SETBIT(x, y) (y) ? (HIGH(x)):(LOW(x))
 #define INVBIT(x) SETBIT((x), !(GETBIT(x)))
 
+// Setup for SPI current modes
 #define SPI_FPGA_MODE	0
 #define SPI_LCD_MODE	1
+#define SPI_MEM_MODE	2
 
 #ifndef COTAG_BITS
 #define COTAG_BITS 264
@@ -79,6 +82,22 @@
 #define LED_D_ON()		HIGH(GPIO_LED_D)
 #define LED_D_OFF()		LOW(GPIO_LED_D)
 #define LED_D_INV()		INVBIT(GPIO_LED_D)
+
+// SPI 
+#define SCK_LOW         LOW(GPIO_SPCK) 
+#define SCK_HIGH        HIGH(GPIO_SPCK) 
+#define MOSI_HIGH       HIGH(GPIO_MOSI)
+#define MOSI_LOW        LOW(GPIO_MOSI)
+#define MISO_VALUE      (AT91C_BASE_PIOA->PIO_PDSR & GPIO_MISO)
+
+// fpga
+#define NCS_0_LOW         LOW(GPIO_NCS0)
+#define NCS_0_HIGH        HIGH(GPIO_NCS0)
+
+// flash mem PA1
+#define NCS_1_LOW         LOW(GPIO_NCS2)
+#define NCS_1_HIGH        HIGH(GPIO_NCS2)
+
 #define RELAY_ON()		HIGH(GPIO_RELAY)
 #define RELAY_OFF()		LOW(GPIO_RELAY)
 #define BUTTON_PRESS()	!((AT91C_BASE_PIOA->PIO_PDSR & GPIO_BUTTON) == GPIO_BUTTON)

@@ -16,7 +16,6 @@
 *.moc.cpp
 *.z
 !client/hardnested/tables/*.z
-usb_cmd.lua
 version.c
 client/ui/ui_overlays.h
 *.Td
@@ -50,4 +49,4 @@ client/traces/*
 
 
 client/lualibs/mf_default_keys.lua
-client/default_keys.dic
+client/lualibs/usb_cmd.lua

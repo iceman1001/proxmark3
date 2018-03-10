@@ -26,20 +26,20 @@ void FpgaSetupSscExt(uint8_t clearPCER);
 void FpgaSetupSsc(void);
 void SetupSpi(int mode);
 bool FpgaSetupSscDma(uint8_t *buf, int len);
-void Fpga_print_status();
-int FpgaGetCurrent();
+void Fpga_print_status(void);
+int FpgaGetCurrent(void);
 #define FpgaDisableSscDma(void)	AT91C_BASE_PDC_SSC->PDC_PTCR = AT91C_PDC_RXTDIS;
 #define FpgaEnableSscDma(void) AT91C_BASE_PDC_SSC->PDC_PTCR = AT91C_PDC_RXTEN;
 void SetAdcMuxFor(uint32_t whichGpio);
 
-extern void switch_off();
+// extern and generel turn off the antenna method
+extern void switch_off(void);
 
 // definitions for multiple FPGA config files support
-#define FPGA_BITSTREAM_MAX 3	// the total number of FPGA bitstreams (configs)
+#define FPGA_BITSTREAM_MAX 2	// the total number of FPGA bitstreams (configs)
 #define FPGA_BITSTREAM_ERR 0
 #define FPGA_BITSTREAM_LF 1
 #define FPGA_BITSTREAM_HF 2
-#define FPGA_BITSTREAM_NFC 3
 
 // Definitions for the FPGA commands.
 #define FPGA_CMD_SET_CONFREG						(1<<12)
@@ -85,4 +85,10 @@ extern void switch_off();
 #define FPGA_HF_ISO14443A_READER_LISTEN				(3<<0)
 #define FPGA_HF_ISO14443A_READER_MOD				(4<<0)
 
+//options for Felica. 
+#define FPGA_MAJOR_MODE_ISO18092          			(5<<5) // 01010 0000
+#define FPGA_HF_ISO18092_FLAG_NOMOD                 (1<<0) // 0001 disable modulation module
+#define FPGA_HF_ISO18092_FLAG_424K                  (2<<0) // 0010 should enable 414k mode (untested). No autodetect
+#define FPGA_HF_ISO18092_FLAG_READER	            (4<<0) // 0100 enables antenna power, to act as a reader instead of tag
+ 
 #endif

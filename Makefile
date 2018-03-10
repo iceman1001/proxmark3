@@ -23,8 +23,12 @@ FLASH_PORT=com3
 PATHSEP=\\#
 endif
 
-all clean: %: client/% bootrom/% armsrc/% recovery/%
+all clean: %: client/% bootrom/% armsrc/% recovery/% mfkey/% nonce2key/%
 
+mfkey/%: FORCE
+	$(MAKE) -C tools/mfkey $(patsubst mfkey/%,%,$@)
+nonce2key/%: FORCE
+	$(MAKE) -C tools/nonce2key $(patsubst nonce2key/%,%,$@)
 bootrom/%: FORCE
 	$(MAKE) -C bootrom $(patsubst bootrom/%,%,$@)
 armsrc/%: FORCE
@@ -45,8 +49,10 @@ help:
 	@echo + flash-bootrom - Make bootrom and flash it
 	@echo + flash-os      - Make armsrc and flash os \(includes fpga\)
 	@echo + flash-all     - Make bootrom and armsrc and flash bootrom and os image
+	@echo + mfkey         - Make tools/mfkey
+	@echo + nounce2key    - Make tools/nounce2key
 	@echo +	clean         - Clean in bootrom, armsrc and the OS-specific host directory
-
+	
 client: client/all
 
 flash-bootrom: bootrom/obj/bootrom.elf $(FLASH_TOOL)
@@ -73,7 +79,11 @@ tarbin: newtarbin client/tarbin armsrc/tarbin bootrom/tarbin
 udev:
 	sudo cp -rf driver/77-mm-usb-device-blacklist.rules /etc/udev/rules.d/77-mm-usb-device-blacklist.rules
 	sudo udevadm control --reload-rules
-	sudo adduser $USER dialout
+ifneq ($(wildcard /etc/arch-release),) #If user is running ArchLinux
+	sudo usermod -aG uucp $(USER) #Use specific command and group
+else
+	sudo adduser $(USER) dialout
+endif
  
 # easy printing of MAKE VARIABLES
 print-%: ; @echo $* = $($*) 
