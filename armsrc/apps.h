@@ -90,6 +90,7 @@ void CmdFSKsimTAG(uint16_t arg1, uint16_t arg2, size_t size, uint8_t *BitStream)
 void CmdASKsimTag(uint16_t arg1, uint16_t arg2, size_t size, uint8_t *BitStream);
 void CmdPSKsimTag(uint16_t arg1, uint16_t arg2, size_t size, uint8_t *BitStream);
 void CmdHIDdemodFSK(int findone, uint32_t *high, uint32_t *low, int ledcontrol);
+void CmdNEDAPdemodASK(int findone, uint32_t *high, uint32_t *low, int ledcontrol);
 void CmdAWIDdemodFSK(int findone, uint32_t *high, uint32_t *low, int ledcontrol); // Realtime demodulation mode for AWID26
 void CmdEM410xdemod(int findone, uint32_t *high, uint64_t *low, int ledcontrol);
 void CmdIOdemodFSK(int findone, uint32_t *high, uint32_t *low, int ledcontrol);

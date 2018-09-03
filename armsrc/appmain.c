@@ -427,6 +427,9 @@ void printStandAloneModes(void) {
 #if defined(WITH_LF_SAMYRUN)
 	DbpString("   LF HID26 standalone - aka SamyRun (Samy Kamkar)");
 #endif
+#if defined(WITH_LF_NEDAPXS)
+	DbpString("   LF Nedap XS standalone - (Florent CARLI)");
+#endif
 #if defined(WITH_LF_PROXBRUTE)
 	DbpString("   LF HID ProxII bruteforce - aka Proxbrute (Brad Antoniewicz)");
 #endif 
@@ -1446,7 +1449,7 @@ void  __attribute__((noreturn)) AppMain(void) {
 * All standalone mod "main loop" should be the RunMod() function.
 * Since the standalone is either LF or HF, the somewhat bisarr defines below exists. 
 */			
-#if defined (WITH_LF) && ( defined (WITH_LF_SAMYRUN) || defined (WITH_LF_HIDBRUTE) || defined (WITH_LF_PROXBRUTE) )
+#if defined (WITH_LF) && ( defined (WITH_LF_SAMYRUN) || defined (WITH_LF_HIDBRUTE) || defined (WITH_LF_PROXBRUTE) || defined (WITH_LF_NEDAPXS) )
 			RunMod();
 #endif
 		
