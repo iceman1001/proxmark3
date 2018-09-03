@@ -36,6 +36,7 @@ APP_CFLAGS = -DWITH_CRC \
 #-------------------------------------------------------
 #			 -DWITH_LF_ICERUN
 #			 -DWITH_LF_SAMYRUN
+#			 -DWITH_LF_NEDAPXS
 #			 -DWITH_LF_PROXBRUTE
 #			 -DWITH_LF_HIDBRUTE
 #			 -DWITH_HF_YOUNG
@@ -109,6 +110,7 @@ ARMSRC = fpgaloader.c \
 	lf_samyrun.c \
     vtsend.c 
 	#	lf_samyrun.c \
+	#	lf_nedapxs.c \
 	#	lf_hidbrute.c \
 	#	lf_proxbrute.c \
 	#	hf_mattyrun.c \

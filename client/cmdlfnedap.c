@@ -13,14 +13,14 @@ static int CmdHelp(const char *Cmd);
 int usage_lf_nedap_clone(void){
 	PrintAndLogEx(NORMAL, "clone a NEDAP tag to a T55x7 tag.");
 	PrintAndLogEx(NORMAL, "");
-	PrintAndLogEx(NORMAL, "Usage: lf nedap clone [h] <Card-Number>");
+	PrintAndLogEx(NORMAL, "Usage: lf nedap clone [h] <Raw-dump>");
 	PrintAndLogEx(NORMAL, "Options:");
 	PrintAndLogEx(NORMAL, "      h             : This help");
-	PrintAndLogEx(NORMAL, "      <Card Number> : 24-bit value card number");
+	PrintAndLogEx(NORMAL, "      <Raw Dump> : 16-Byte hex value (FF...)");
 //	PrintAndLogEx(NORMAL, "      Q5            : optional - clone to Q5 (T5555) instead of T55x7 chip");
 	PrintAndLogEx(NORMAL, "");
 	PrintAndLogEx(NORMAL, "Examples:");
-	PrintAndLogEx(NORMAL, "       lf nedap clone 112233");
+	PrintAndLogEx(NORMAL, "       lf nedap clone ff939...........................");
 	return 0;
 }
 
@@ -28,13 +28,13 @@ int usage_lf_nedap_sim(void) {
 	PrintAndLogEx(NORMAL, "Enables simulation of NEDAP card with specified card number.");
 	PrintAndLogEx(NORMAL, "Simulation runs until the button is pressed or another USB command is issued.");
 	PrintAndLogEx(NORMAL, "");
-	PrintAndLogEx(NORMAL, "Usage:  lf nedap sim [h] <Card-Number>");
+	PrintAndLogEx(NORMAL, "Usage:  lf nedap sim [h] <Raw-dump>");
 	PrintAndLogEx(NORMAL, "Options:");
 	PrintAndLogEx(NORMAL, "      h               : This help");
-	PrintAndLogEx(NORMAL, "      <Card Number>   : 24-bit value card number");
+	PrintAndLogEx(NORMAL, "      <Raw Dump>   : 16-Byte hex value (FF...)");
 	PrintAndLogEx(NORMAL, "");
 	PrintAndLogEx(NORMAL, "Examples:");
-	PrintAndLogEx(NORMAL, "       lf nedap sim 112233");
+	PrintAndLogEx(NORMAL, "       lf nedap sim ff939...........................");
 	return 0;
 }
 
@@ -51,57 +51,6 @@ int detectNedap(uint8_t *dest, size_t *size) {
 	return (int) startIdx;
 }
 
-int GetNedapBits(uint32_t cn, uint8_t *nedapBits) {
-
-	uint8_t pre[128];
-	memset(pre, 0x00, sizeof(pre));
-
-	// preamble  1111 1111 10 = 0xFF8
-	num_to_bytebits(0xFF8, 12, pre);
-
-	// fixed tagtype code?  0010 1101 = 0x2D
-	num_to_bytebits(0x2D, 8, pre+10);
-	
-	// 46 encrypted bits - UNKNOWN ALGO
-	//    -- 16 bits checksum. Should be 4x4 checksum,  based on UID and 2 constant values.
-	//    -- 30 bits undocumented?  
-	//num_to_bytebits(cn, 46, pre+18);
-
-	//----from this part, the UID in clear text, with a 1bit ZERO as separator between bytes.
-	pre[64] = 0;
-	pre[73] = 0;
-	pre[82] = 0;
-	pre[91] = 0;
-	pre[100] = 0;
-	pre[109] = 0;
-	pre[118] = 0;
-	
-	// cardnumber (uid)
-	num_to_bytebits( (cn >>  0) & 0xFF, 8, pre+65);
-	num_to_bytebits( (cn >>  8) & 0xFF, 8, pre+74);
-	num_to_bytebits( (cn >> 16) & 0xFF, 8, pre+83);
-
-	// two ?
-	num_to_bytebits( 0, 8, pre+92);
-	num_to_bytebits( 0, 8, pre+101);
-	
-	// chksum 
-	num_to_bytebits( (0 >> 0) & 0xFF, 8, pre+110);
-	num_to_bytebits( (0 >> 8) & 0xFF, 8, pre+119);	
-
-	
-	// add paritybits	(bitsource, dest, sourcelen, paritylen, parityType (odd, even,)
-	addParity(pre, pre+64, 64, 8, 1);
-	addParity(pre+64, pre+64, 64, 8, 1);
-
-	pre[63] = GetParity( DemodBuffer, EVEN, 63);
-	pre[127] = GetParity( DemodBuffer+64, EVEN, 63);
-	
-	memcpy(nedapBits, pre, 128);
-
-	// 1111111110001011010000010110100011001001000010110101001101011001000110011010010000000000100001110001001000000001000101011100111
-	return 1;
-}
 /*
  - UID: 001630
  - i: 4071
@@ -235,46 +184,38 @@ int CmdLFNedapRead(const char *Cmd) {
 	lf_read(true, 12000);
 	return CmdLFNedapDemod(Cmd);
 }
-/*
+
 int CmdLFNedapClone(const char *Cmd) {
-
 	char cmdp = param_getchar(Cmd, 0);
-	if (strlen(Cmd) == 0 || cmdp == 'h' || cmdp == 'H') return usage_lf_nedap_clone();
+	if (strlen(Cmd) != 32 || cmdp == 'h' || cmdp == 'H') return usage_lf_nedap_clone();
 
-	uint32_t cardnumber=0, cn = 0;
+	char rawdump1[9]="";
+	char rawdump2[9]="";
+	char rawdump3[9]="";
+	char rawdump4[9]="";
 	uint32_t blocks[5];
-	uint8_t bits[128];
-	memset(bits, 0x00, sizeof(bits));
+	memcpy(rawdump1, Cmd + 0, 8);
+	memcpy(rawdump2, Cmd + 8, 8);
+	memcpy(rawdump3, Cmd + 16, 8);
+	memcpy(rawdump4, Cmd + 24, 8);
 
-	if (sscanf(Cmd, "%u", &cn ) != 1) return usage_lf_nedap_clone();
-
-	cardnumber = (cn & 0x00FFFFFF);
-	
-	if ( !GetNedapBits(cardnumber, bits)) {
-		PrintAndLogEx(WARNING, "Error with tag bitstream generation.");
-		return 1;
-	}	
-
-	((ASK/DIphase   data rawdemod ab 0 64 1 0
 	//NEDAP - compat mode, ASK/DIphase, data rate 64, 4 data blocks
-	// DI-pahse (CDP) T55x7_MODULATION_DIPHASE
-	blocks[0] = T55x7_MODULATION_DIPHASE | T55x7_BITRATE_RF_64 | 7 << T55x7_MAXBLOCK_SHIFT;
-
-	if (param_getchar(Cmd, 3) == 'Q' || param_getchar(Cmd, 3) == 'q')
-		blocks[0] = T5555_MODULATION_BIPHASE | T5555_INVERT_OUTPUT | T5555_SET_BITRATE(64) | 7 <<T5555_MAXBLOCK_SHIFT;
-
-	blocks[1] = bytebits_to_byte(bits, 32);
-	blocks[2] = bytebits_to_byte(bits + 32, 32);
-	blocks[3] = bytebits_to_byte(bits + 64, 32);
-	blocks[4] = bytebits_to_byte(bits + 96, 32);
-
-	PrintAndLogEx(NORMAL, "Preparing to clone NEDAP to T55x7 with card number: %u", cardnumber);
-	print_blocks(blocks, 5);
+	// DI-phase (CDP) T55x7_MODULATION_DIPHASE
+	blocks[0] = T55x7_BITRATE_RF_64 | T55x7_MODULATION_DIPHASE | 4 << T55x7_MAXBLOCK_SHIFT;
+	blocks[1] = strtoll(rawdump1, NULL, 16);
+	blocks[2] = strtoll(rawdump2, NULL, 16);
+	blocks[3] = strtoll(rawdump3, NULL, 16);
+	blocks[4] = strtoll(rawdump4, NULL, 16);
+	PrintAndLogEx(WARNING, "Preparing to clone NEDAP to T55x7 with raw dump: %s", Cmd);
+	PrintAndLogEx(WARNING, "Blk | Data ");
+	PrintAndLogEx(WARNING, "----+------------");
+	for (uint8_t i = 0; i<5; ++i)
+		PrintAndLogEx(NORMAL, " %02d | %08" PRIx32, i, blocks[i]);
 
 	UsbCommand resp;
 	UsbCommand c = {CMD_T55XX_WRITE_BLOCK, {0,0,0}};
 
-	for (uint8_t i = 0; i<5; ++i ) {
+	for (uint8_t i = 0; i<5; ++i) {
 		c.arg[0] = blocks[i];
 		c.arg[1] = i;
 		clearCommandBuffer();
@@ -284,21 +225,14 @@ int CmdLFNedapClone(const char *Cmd) {
 			return -1;
 		}
 	}
-    return 0;
+	return 0;
 }
-*/
 
 int CmdLFNedapSim(const char *Cmd) {
 
-	uint32_t cardnumber = 0, cn = 0;
-	
 	char cmdp = param_getchar(Cmd, 0);
-	if (strlen(Cmd) == 0 || cmdp == 'h' || cmdp == 'H') return usage_lf_nedap_sim();
+	if (strlen(Cmd) != 32 || cmdp == 'h' || cmdp == 'H') return usage_lf_nedap_sim();
 
-	if (sscanf(Cmd, "%u", &cn ) != 1) return usage_lf_nedap_sim();
-	
-	cardnumber = (cn & 0x00FFFFFF);
-	
 	uint8_t bs[128];
 	size_t size = sizeof(bs);
 	memset(bs, 0x00, size);
@@ -308,14 +242,22 @@ int CmdLFNedapSim(const char *Cmd) {
 	uint16_t arg1, arg2;
 	arg1 = clk << 8 | encoding;
 	arg2 = invert << 8 | separator;
-	
-	if ( !GetNedapBits(cardnumber, bs)) {
-		PrintAndLogEx(WARNING, "Error with tag bitstream generation.");
-		return 1;
-	}	
 
-	PrintAndLogEx(NORMAL, "bin  %s", sprint_bin_break(bs, 128, 32));
-	PrintAndLogEx(NORMAL, "Simulating Nedap - CardNumber: %u", cardnumber );
+	char rawdump1[9]="";
+	char rawdump2[9]="";
+	char rawdump3[9]="";
+	char rawdump4[9]="";
+	memcpy(rawdump1, Cmd+0, 8);
+	memcpy(rawdump2, Cmd+8, 8);
+	memcpy(rawdump3, Cmd+16, 8);
+	memcpy(rawdump4, Cmd+24, 8);
+	num_to_bytebits(strtoll(rawdump1, NULL, 16), 32, bs);
+	num_to_bytebits(strtoll(rawdump2, NULL, 16), 32, bs+32);
+	num_to_bytebits(strtoll(rawdump3, NULL, 16), 32, bs+64);
+	num_to_bytebits(strtoll(rawdump4, NULL, 16), 32, bs+96);
+
+	PrintAndLogEx(NORMAL, "Simulating Nedap - RawDump: %s%s%s%s", rawdump1,rawdump2,rawdump3,rawdump4);
+	PrintAndLogEx(NORMAL, "binary:  %s", sprint_bin_break(bs, 128, 128));
 	
 	UsbCommand c = {CMD_ASK_SIM_TAG, {arg1, arg2, size}};
 	memcpy(c.d.asBytes, bs, size);
@@ -375,8 +317,8 @@ static command_t CommandTable[] = {
     {"help",	CmdHelp,		1, "this help"},
 	{"demod",	CmdLFNedapDemod,0, "demodulate an Nedap tag from the GraphBuffer"},	
 	{"read",	CmdLFNedapRead, 0, "attempt to read and extract tag data"},
-//	{"clone",	CmdLFNedapClone,0, "<Card Number>  clone nedap tag"},
-	{"sim",		CmdLFNedapSim,  0, "simulate nedap tag"},
+	{"clone",       CmdLFNedapClone,0, "<Raw Dump> clone nedap tag"},
+	{"sim",		CmdLFNedapSim,  0, "<Raw Dump> simulate nedap tag"},
 	{"chk",		CmdLFNedapChk,	1, "calculate Nedap Checksum <uid bytes>"},
     {NULL, NULL, 0, NULL}
 };
