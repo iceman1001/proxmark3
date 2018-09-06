@@ -993,6 +993,107 @@ void CmdHIDdemodFSK(int findone, uint32_t *high, uint32_t *low, int ledcontrol) 
 	if (ledcontrol) LED_A_OFF();
 }
 
+// loop to get raw NEDAP waveform then ASK demodulate the RAW DUMP from it
+void CmdNEDAPdemodASK(int findone, uint32_t *high, uint32_t *low, int ledcontrol) {
+	uint8_t *dest = BigBuf_get_addr();
+	size_t size = 0; 
+	uint32_t hi2 = 0, hi = 0, lo = 0;
+	int idx = 0;
+	int dummyIdx = 0;
+	// Configure to go in 125Khz listen mode
+	LFSetupFPGAForADC(95, true);
+
+	//clear read buffer
+	BigBuf_Clear_keep_EM();
+
+	while( !BUTTON_PRESS() && !usb_poll_validate_length()) {
+
+		WDT_HIT();
+		if (ledcontrol) LED_A_ON();
+
+		DoAcquisition_default(-1, true);
+		// ASK demodulator
+		Dbprintf("CmdNEDAPdemodASK / DoAcquisition_default");
+		// TODO
+		size = 50*128*2; //big enough to catch 2 sequences of largest format
+		idx = NEDAPdemodASK(dest, &size, &hi2, &hi, &lo, &dummyIdx);
+		if ( idx < 0 ) { Dbprintf("NO LUCK"); continue; }
+		Dbprintf("CmdNEDAPdemodASK / ASK demodulation OK ??");
+		if (idx>0 && lo>0 && (size==96 || size==192)){
+			// go over previously decoded manchester data and decode into usable tag ID
+			if (hi2 != 0){ //extra large HID tags  88/192 bits
+				Dbprintf("TAG ID: %x%08x%08x (%d)",
+					hi2,
+					hi,
+					lo,
+					(lo >> 1) & 0xFFFF
+				);
+			} else {  //standard HID tags 44/96 bits
+				uint8_t bitlen = 0;
+				uint32_t fc = 0;
+				uint32_t cardnum = 0;
+				
+				if (((hi >> 5) & 1) == 1){//if bit 38 is set then < 37 bit format is used
+					uint32_t lo2 = 0;
+					lo2=(((hi & 31) << 12) | (lo>>20)); //get bits 21-37 to check for format len bit
+					uint8_t idx3 = 1;
+					while (lo2 > 1){ //find last bit set to 1 (format len bit)
+						lo2 >>= 1;
+						idx3++;
+					}
+					bitlen = idx3 + 19;
+					fc = 0;
+					cardnum = 0;
+					if (bitlen == 26){
+						cardnum = (lo >> 1) & 0xFFFF;
+						fc = (lo >> 17) & 0xFF;
+					}
+					if (bitlen == 37){
+						cardnum = (lo >> 1 ) & 0x7FFFF;
+						fc = ((hi & 0xF) << 12) | (lo >> 20);
+					}
+					if (bitlen == 34){
+						cardnum = (lo >> 1) & 0xFFFF;
+						fc = ((hi & 1) << 15) | (lo >> 17);
+					}
+					if (bitlen == 35){
+						cardnum = (lo >> 1) & 0xFFFFF;
+						fc = ((hi & 1) << 11)|(lo >> 21);
+					}
+				}
+				else { //if bit 38 is not set then 37 bit format is used
+					bitlen= 37;
+					fc = 0;
+					cardnum = 0;
+					if (bitlen == 37){
+						cardnum = (lo >> 1) & 0x7FFFF;
+						fc = ((hi & 0xF) << 12) | (lo >> 20);
+					}
+				}
+				Dbprintf("TAG ID: %x%08x (%d) - Format Len: %dbit - FC: %d - Card: %d",
+						 hi,
+						 lo,
+						 (lo >> 1) & 0xFFFF,
+						 bitlen,
+						 fc,
+						 cardnum
+					);
+			}
+			if (findone){
+				if (ledcontrol)	LED_A_OFF();
+				*high = hi;
+				*low = lo;
+				break;
+			}
+			// reset
+		}
+		hi2 = hi = lo = idx = 0;
+	}
+	FpgaWriteConfWord(FPGA_MAJOR_MODE_OFF);
+	DbpString("Stopped");
+	if (ledcontrol) LED_A_OFF();
+}
+
 // loop to get raw HID waveform then FSK demodulate the TAG ID from it
 void CmdAWIDdemodFSK(int findone, uint32_t *high, uint32_t *low, int ledcontrol) {
 

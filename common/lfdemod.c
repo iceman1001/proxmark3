@@ -51,6 +51,8 @@
 #define NOICE_AMPLITUDE_THRESHOLD 10
 //to allow debug print calls when used not on dev
 
+extern void Dbprintf(const char *fmt, ...);
+
 void dummy(char *fmt, ...){}
 #ifndef ON_DEVICE
 #include "ui.h"
@@ -59,7 +61,7 @@ void dummy(char *fmt, ...){}
 # define prnt PrintAndLog
 #else 
   uint8_t g_debugMode = 0;
-# define prnt dummy
+# define prnt Dbprintf
 #endif
 
 signal_t signalprop = { 255, -255, 0, 0, true };
@@ -1882,6 +1884,44 @@ int Em410xDecode(uint8_t *bits, size_t *size, size_t *startIdx, uint32_t *hi, ui
 	    default: return -6;	
 	}
 	return 1;
+}
+
+// loop to get raw NEDAP waveform then ASK demodulate the TAG ID from it
+int NEDAPdemodASK(uint8_t *dest, size_t *size, uint32_t *hi2, uint32_t *hi, uint32_t *lo, int *waveStartIdx) {
+	prnt("NEDAPdemodASK");
+	//make sure buffer has data
+	if (*size < 96*50) return -1;
+	
+	if (signalprop.isnoise) return -2;
+		
+	// FSK demodulator  fsk2a so invert and fc/10/8
+	// askdemod(dest, size, 50, 1, 10, 8, waveStartIdx); //hid fsk2a
+
+	//did we get a good demod?
+	if (*size < 96*2) return -3;
+
+	// 00011101 bit pattern represent start of frame, 01 pattern represents a 0 and 10 represents a 1
+	size_t startIdx = 0;	
+	uint8_t preamble[] = {0,0,0,1,1,1,0,1};
+	if (!preambleSearch(dest, preamble, sizeof(preamble), size, &startIdx)) 
+		return -4; //preamble not found
+
+	size_t numStart = startIdx + sizeof(preamble);
+	// final loop, go over previously decoded FSK data and manchester decode into usable tag ID
+	for (size_t idx = numStart; (idx-numStart) < *size - sizeof(preamble); idx+=2){
+		if (dest[idx] == dest[idx+1]){
+			return -5; //not manchester data
+		}
+		*hi2 = (*hi2 << 1) | (*hi >> 31);
+		*hi = (*hi << 1) | (*lo >> 31);
+		//Then, shift in a 0 or one into low
+		*lo <<= 1;
+		if (dest[idx] && !dest[idx+1])  // 1 0
+			*lo |= 1;
+		else // 0 1
+			*lo |= 0;
+	}
+	return (int)startIdx;
 }
 
 // loop to get raw HID waveform then FSK demodulate the TAG ID from it

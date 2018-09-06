@@ -24,7 +24,7 @@ APP_CFLAGS = -DWITH_CRC \
 			 -DWITH_FLASH \
 			 -DWITH_SMARTCARD \
 			 -DWITH_HFSNOOP \
-			 -DWITH_LF_SAMYRUN \
+			 -DWITH_LF_NEDAPXS \
 			 -fno-strict-aliasing -ffunction-sections -fdata-sections
 
 ### IMPORTANT -  move the commented variable below this line
@@ -36,6 +36,7 @@ APP_CFLAGS = -DWITH_CRC \
 #-------------------------------------------------------
 #			 -DWITH_LF_ICERUN
 #			 -DWITH_LF_SAMYRUN
+#			 -DWITH_LF_NEDAPXS
 #			 -DWITH_LF_PROXBRUTE
 #			 -DWITH_LF_HIDBRUTE
 #			 -DWITH_HF_YOUNG
@@ -106,9 +107,10 @@ ARMSRC = fpgaloader.c \
 	parity.c \
 	usb_cdc.c \
 	cmd.c \
-	lf_samyrun.c \
+	lf_nedapxs.c \
     vtsend.c 
 	#	lf_samyrun.c \
+	#	lf_nedapxs.c \
 	#	lf_hidbrute.c \
 	#	lf_proxbrute.c \
 	#	hf_mattyrun.c \

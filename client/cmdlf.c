@@ -877,6 +877,7 @@ int CmdLFfind(const char *Cmd) {
 	}
 	
 	if (EM4x50Read("", false))	{ PrintAndLogEx(SUCCESS, "\nValid EM4x50 ID Found!"); return 1;}
+	if (CmdLFNedapDemod(""))	{ PrintAndLogEx(SUCCESS, "\nValid NEDAP ID Found!"); goto out;}
 	if (CmdAWIDDemod(""))		{ PrintAndLogEx(SUCCESS, "\nValid AWID ID Found!"); goto out;}
 	if (CmdEM410xDemod(""))		{ PrintAndLogEx(SUCCESS, "\nValid EM410x ID Found!"); goto out;}
 	if (CmdFdxDemod(""))		{ PrintAndLogEx(SUCCESS, "\nValid FDX-B ID Found!"); goto out;}	
@@ -886,7 +887,6 @@ int CmdLFfind(const char *Cmd) {
 	if (CmdIndalaDemod(""))		{ PrintAndLogEx(SUCCESS, "\nValid Indala ID Found!");  goto out;}
 	if (CmdIOProxDemod(""))		{ PrintAndLogEx(SUCCESS, "\nValid IO Prox ID Found!"); goto out;}
 	if (CmdJablotronDemod(""))	{ PrintAndLogEx(SUCCESS, "\nValid Jablotron ID Found!"); goto out;}
-	if (CmdLFNedapDemod(""))	{ PrintAndLogEx(SUCCESS, "\nValid NEDAP ID Found!"); goto out;}
 	if (CmdNexWatchDemod("")) 	{ PrintAndLogEx(SUCCESS, "\nValid NexWatch ID Found!"); goto out;}
 	if (CmdNoralsyDemod(""))	{ PrintAndLogEx(SUCCESS, "\nValid Noralsy ID Found!"); goto out;}
 	if (CmdPacDemod(""))		{ PrintAndLogEx(SUCCESS, "\nValid PAC/Stanley ID Found!"); goto out;}	
