@@ -51,15 +51,22 @@
 #define NOICE_AMPLITUDE_THRESHOLD 10
 //to allow debug print calls when used not on dev
 
-void dummy(char *fmt, ...){}
+extern void Dbprintf(const char *fmt, ...);
+extern void Dbhexdump(int len, uint8_t *d, bool bAsci);
+
+void dummy(int len, uint8_t *d, bool bAsci){}
+
 #ifndef ON_DEVICE
 #include "ui.h"
 # include "cmdparser.h"
 # include "cmddata.h"
 # define prnt PrintAndLog
+# define prnthex dummy
 #else 
+# include "apps.h"
   uint8_t g_debugMode = 0;
-# define prnt dummy
+# define prnt Dbprintf
+# define prnthex Dbhexdump
 #endif
 
 signal_t signalprop = { 255, -255, 0, 0, true };
@@ -534,7 +541,7 @@ int DetectASKClock(uint8_t *dest, size_t size, int *clock, int maxErr) {
 	//get high and low peak
 	int peak, low;
 	if (getHiLo(dest, loopCnt, &peak, &low, 75, 75) < 1) return -1;
-	
+
 	//test for large clean peaks
 	if (!clockFnd){
 		if (DetectCleanAskWave(dest, size, peak, low)==1){
@@ -1882,6 +1889,44 @@ int Em410xDecode(uint8_t *bits, size_t *size, size_t *startIdx, uint32_t *hi, ui
 	    default: return -6;	
 	}
 	return 1;
+}
+
+
+// loop to get raw NEDAP waveform then ASK demodulate the dump
+int NEDAPdemodASK(uint8_t *dest, size_t *size, int *waveStartIdx) {
+	//make sure buffer has data
+	if (*size < 96*50) return -1;
+
+	if (signalprop.isnoise) return -2;	
+
+	// ASK demodulator
+	int clk = 64;
+	int invert = 1;
+	int maxErr = 0;
+	int offset = 0;
+	int errCnt = askdemod_ext(dest, size, &clk, &invert, maxErr, 0, 0, waveStartIdx);
+        if ( errCnt < 0 || errCnt > maxErr ) return -3;
+
+	//did we get a good demod?
+	if (*size < 128*2) return -4;
+
+	//attempt to Biphase decode BitStream
+	errCnt = BiphaseRawDecode(dest, size, &offset, invert);
+	if (errCnt < 0) return -5;
+	if (errCnt > maxErr) return -6;
+
+	size_t startIdx = 0;	
+	size_t startIdx2 = 0;	
+	uint8_t preamble[] = {1,1,1,1,1,1,1,1,1,0};
+	if (!preambleSearch(dest, preamble, sizeof(preamble), size, &startIdx)) 
+		return -7; //preamble not found
+	size_t psize = *size-startIdx-128;	
+	if (!preambleSearch(&dest[startIdx+128], preamble, sizeof(preamble), &psize, &startIdx2))
+		return -8; // 2nd preamble not found
+	if (startIdx2)  //if 2nd preamble not at 0, not directly after the first, retry
+	       return -9;
+
+	return (int)startIdx;
 }
 
 // loop to get raw HID waveform then FSK demodulate the TAG ID from it

@@ -651,6 +651,28 @@ static void fcAll(uint8_t fc, int *n, uint8_t clock, uint16_t *modCnt)
 	}
 }
 
+void CmdNEDAPsimTAG( uint8_t *rawdump, int ledcontrol) {
+
+	uint8_t bs[128];
+	size_t size = sizeof(bs);
+	memset(bs, 0x00, size);
+
+	// NEDAP,  Biphase = 2, clock 64, inverted,  (DIPhase == inverted BIphase
+	uint8_t  clk = 64, encoding = 2, separator = 0, invert = 1;
+	uint16_t arg1, arg2;
+	arg1 = clk << 8 | encoding;
+	arg2 = invert << 8 | separator;
+
+	for (uint8_t i=0;i<16;i++) {
+		for (uint8_t j=0;j<8;j++) {
+			bs[i*8+j] = (rawdump[i] >> (7-j)) & 1U;
+		}
+	}
+	if (ledcontrol)	LED_A_ON();
+	CmdASKsimTag(arg1, arg2, size, bs);
+	if (ledcontrol)	LED_A_OFF();
+}
+
 // prepare a waveform pattern in the buffer based on the ID given then
 // simulate a HID tag until the button is pressed
 void CmdHIDsimTAGEx( uint32_t hi, uint32_t lo, int ledcontrol, int numcycles) {
@@ -987,6 +1009,43 @@ void CmdHIDdemodFSK(int findone, uint32_t *high, uint32_t *low, int ledcontrol) 
 			// reset
 		}
 		hi2 = hi = lo = idx = 0;
+	}
+	FpgaWriteConfWord(FPGA_MAJOR_MODE_OFF);
+	DbpString("Stopped");
+	if (ledcontrol) LED_A_OFF();
+}
+
+// loop to get raw NEDAP waveform then ASK demodulate the RAW DUMP from it
+void CmdNEDAPdemodASK(int findone, uint8_t *rawdump, int ledcontrol) {
+	uint8_t *dest = BigBuf_get_addr();
+	size_t size = 0; 
+	int idx = 0;
+	int dummyIdx = 0;
+	// Configure to go in 125Khz listen mode
+	LFSetupFPGAForADC(95, true);
+
+	//clear read buffer
+	BigBuf_Clear_keep_EM();
+
+	while( !BUTTON_PRESS() && !usb_poll_validate_length()) {
+
+		WDT_HIT();
+		if (ledcontrol) LED_A_ON();
+
+		DoAcquisition_default(-1, true);
+		// ASK demodulator
+		size = 50*128*2; //big enough to catch 2 sequences of largest format
+		idx = NEDAPdemodASK(dest, &size, &dummyIdx);
+		if ( idx < 0 ) { Dbprintf("Reading NEDAP-XS error %d, retrying",idx); continue; }
+		// get rawdump for bitstream
+		for (int i=0;i<16;i++){
+			uint8_t *e = &dest[idx+8*i];
+			rawdump[i] = e[0] << 7 | e[1] << 6 | e[2] << 5 | e[3] << 4 | e[4] << 3 | e[5] << 2 | e[6] << 1 | e[7];
+		}
+		if (findone){
+			if (ledcontrol)	LED_A_OFF();
+			break;
+		}
 	}
 	FpgaWriteConfWord(FPGA_MAJOR_MODE_OFF);
 	DbpString("Stopped");
@@ -1467,6 +1526,19 @@ void WriteT55xx(uint32_t *blockdata, uint8_t startblock, uint8_t numblocks) {
 	// write last block first and config block last (if included)
 	for (uint8_t i = numblocks+startblock; i > startblock; i--)
 		T55xxWriteBlockExt(blockdata[i-1], i-1, 0, 0);
+}
+
+void CopyNEDAPtoT55x7(uint8_t *rawdump) {
+	uint32_t blocks[5];
+	blocks[0] = T55x7_BITRATE_RF_64 | T55x7_MODULATION_DIPHASE | 4 << T55x7_MAXBLOCK_SHIFT;
+	for (int i=0;i<4;i++) {
+		for (int j=0;j<4;j++) {
+			*(((unsigned char *)&blocks[i+1])+j) = rawdump[i*4+3-j];
+		}
+	}
+	LED_D_ON();
+	WriteT55xx(blocks, 0, 4+1);
+	LED_D_OFF();
 }
 
 // Copy HID id to card and setup block 0 config
