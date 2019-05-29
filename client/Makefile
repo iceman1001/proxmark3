@@ -27,8 +27,8 @@ LDLIBS = -L/opt/local/lib -L/usr/local/lib -lreadline -lpthread -lm
 LUALIB = ../liblua/liblua.a
 LDFLAGS = $(ENV_LDFLAGS)
 INCLUDES_CLIENT = -I. -I../include -I../common -I../common/polarssl -I../zlib -I../uart -I/opt/local/include -I../liblua
-CFLAGS = $(ENV_CFLAGS) -std=c99 -D_ISOC99_SOURCE -DPRESETS $(INCLUDES_CLIENT) -Wall -g -O3
-CXXFLAGS = -I../include -Wall -O3
+CFLAGS = $(ENV_CFLAGS) -std=c99 -D_ISOC99_SOURCE -DPRESETS $(INCLUDES_CLIENT) -Wall -g -O3 -fPIC
+CXXFLAGS = -I../include -Wall -O3 -fPIC
 
 LUAPLATFORM = generic
 platform = $(shell uname)
